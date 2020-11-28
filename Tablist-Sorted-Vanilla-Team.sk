@@ -1,0 +1,44 @@
+
+#This simple script allows you to sort your players in tablist based on their rank.
+#This uses the vanilla team system via simple console commands.
+
+
+# Function to register a new team and set it's prefix/suffic
+function registerTeam(name: string, prefix: string, suffix: string):
+	execute console command "/team add %{_name}%"
+	if length of {_prefix} > 0:
+		execute console command "/team modify %{_name}% prefix ""%{_prefix}% """
+	if length of {_suffix} > 0:
+		execute console command "/team modify %{_name}% suffix ""%{_suffix}% """
+
+# Function to join a player to a team
+function joinTeam(player: player, team: string):
+	execute console command "/team leave %{_player}%" # We do this to prevent being on more than 1 team
+	execute console command "/team join %{_team}% %{_player}%"
+
+
+# When the server loads we will register our teams
+# Subsequent loads, this will throw some warnings in the console
+# You can either ignore these, or remove this section of code once teams are registered
+on skript load:
+	# We use a, b, c to rank our teams from highest to lowest
+	# You can name the team whatever you want but they will show up in
+	# the tablist in alphabetical order
+	registerTeam("a", "&7[&aOWNER&7]", "")
+	registerTeam("b", "&7[&cADMIN&7]", "")
+	registerTeam("c", "&7[&bMOD&7]", "")
+	registerTeam("d", "&7[&7PLAYER&7]", "")
+
+# When the player joins, let's add them to the appropriate team
+# Use whatever permissions you see fit
+on join:
+	wait 1 tick
+	if player has permission "rank.owner":
+		joinTeam(player, "a")
+	else if player has permission "rank.admin":
+		joinTeam(player, "b")
+	else if player has permission "rank.mod":
+		joinTeam(player, "c")
+	else:
+		joinTeam(player, "d")
+
