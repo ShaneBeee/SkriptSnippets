@@ -1,6 +1,9 @@
 
-#This simple script allows you to sort your players in tablist based on their rank.
-#This uses the vanilla team system via simple console commands.
+# Sorted Tablists
+# By: ShaneBee
+
+# This simple script allows you to sort your players in tablist based on their rank.
+# This uses the vanilla team system via simple console commands.
 
 
 # Function to register a new team and set it's prefix/suffix
