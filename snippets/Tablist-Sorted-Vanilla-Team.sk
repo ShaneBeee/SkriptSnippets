@@ -3,7 +3,7 @@
 #This uses the vanilla team system via simple console commands.
 
 
-# Function to register a new team and set it's prefix/suffic
+# Function to register a new team and set it's prefix/suffix
 function registerTeam(name: string, prefix: string, suffix: string):
 	execute console command "/team add %{_name}%"
 	if length of {_prefix} > 0:
