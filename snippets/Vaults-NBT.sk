@@ -1,0 +1,43 @@
+
+# Vaults
+# Requires Skript 2.5+, SkBee 1.7+
+
+# This Skript snippet shows a simple method for saving vaults into a Player's NBT
+# By using this method you can greatly reduce the amount of variables your server is using
+
+# Save the inventory contents to the player's NBT
+function saveInv(p: player, name: string):
+	loop slots of current inventory of {_p} times:
+		if slot loop-number -1 of current inventory of {_p} is not air:
+			set {_i} to nbt compound of slot loop-number -1 of current inventory of {_p}
+			set tag "Slot" of {_i} to floor(loop-number -1) #for some reason its saving as a float, so we do this workaround
+			add {_i} to {_items::*}
+	set {_n} to nbt compound of {_p}
+	set {_c} to tag "custom" of {_n}
+	delete tag {_name} of {_c}
+	set tag {_name} of {_c} to {_items::*}
+	set tag "custom" of {_n} to {_c}
+
+# Load the inventory contents from the player's NBT
+function loadInv(p: player, name: string):
+	set {_n} to nbt compound of {_p}
+	set {_c} to tag "custom" of {_n}
+	set {_v::*} to tag {_name} of {_c}
+	loop {_v::*}:
+		set {_s} to tag "Slot" of loop-value
+		set {_i} to nbt item from loop-value
+		set slot {_s} of current inventory of {_p} to {_i}
+
+
+# Sample vault command for loading
+command /vault <number=1>:
+	trigger:
+		open chest inventory named "&3Vault ##%arg-1%" with 3 rows to player
+		loadInv(player, "Vault-%arg-1%")
+
+# Sample event for saving
+on inventory close:
+	if name of current inventory of player contains "&3Vault ##":
+		set {_n} to uncolored name of current inventory of player
+		replace " ##" with "-" in {_n}
+		saveInv(player, {_n})
