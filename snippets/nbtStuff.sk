@@ -1,0 +1,101 @@
+# Random NBT stuff, tab completions, && no ghast&&water mobs
+# By: ShaneBee
+
+on spawn of ghast or water mob:
+	cancel event
+
+on tab complete of "/sk" and "/skript":
+	set tab completions of position 1 to "reload", "enable", "info", "help" and "disable"
+	if tab arg-1 = "reload" or "disable":
+		set tab completions of position 2 to all scripts where [input does not start with "-"]
+	else if tab arg-1 = "enable":
+		set tab completions of position 2 to all scripts where [input starts with "-"]
+
+
+function locToString(loc: location, pretty: boolean = true, split: string = "") :: string:
+	if {_pretty} = true:
+		return "&bLocation&r%pretty nbt of locToNBT({_loc}, false, {_pretty}) with split {_split}%"
+	return "Location%{_n}%"
+
+function locToNBT(loc: location, pretty: boolean = true, block: boolean) :: nbt compound:
+	set {_n} to nbt compound of "{}"
+	set tag "world" of {_n} to "%world of {_loc}%"
+	set tag "x" of {_n} to x coord of {_loc}
+	set tag "y" of {_n} to y coord of {_loc}
+	set tag "z" of {_n} to z coord of {_loc}
+	if {_block} = false:
+		set tag "pitch" of {_n} to 0.0
+		set tag "yaw" of {_n} to yaw of {_loc}
+	return {_n}
+
+
+function blockToString(b: block, pretty: boolean = true, split: string = "") :: string:
+	set {_n} to nbt compound of "{}"
+	set tag "alias" of {_n} to "%{_b}%"
+	set tag "data" of {_n} to "%block data of {_b}%"
+	set tag "pos" of {_n} to locToNBT(({_b} offset by vector(-0.5, -0.5, -0.5)), true, {_pretty})
+	set {_nbt} to nbt compound copy of {_b}
+	delete tag "x" of {_nbt}
+	delete tag "y" of {_nbt}
+	delete tag "z" of {_nbt}
+	delete tag "id" of {_nbt}
+	set tag "nbt" of {_n} to {_nbt}
+	if {_pretty} = true:
+		return "&bBlock&r%pretty nbt of {_n} with split {_split}%"
+	return "Block%{_n}%"
+
+function itemToString(i: itemtype, pretty: boolean = true, split: string = "") :: string:
+	set {_nbt} to nbt compound of "{}"
+	set tag "alias" of {_nbt} to "%{_i}%"
+	set tag "nbt" of {_nbt} to nbt compound of {_i}
+	if {_pretty} = true:
+		return "&bItem&r%pretty nbt of {_nbt} with split {_split}%"
+	return "Item%{_nbt}%"
+
+function entityToString(e: entity, pretty: boolean = true, split: string = "") :: string:
+	set {_n} to nbt compound of "{}"
+	set tag "type" of {_n} to "%{_e}%"
+	set tag "pos" of {_n} to locToNBT({_e}, {_pretty}, false)
+
+	if {_pretty} = true:
+		return "&bEntity&r%pretty nbt of {_n} with split {_split}%"
+	return "Entity%{_n}%"
+
+
+function debug(p: command senders, s: string):
+	loop 3 times:
+		send "" to {_p::*} where [input is a player]
+	send "&7[&cDEBUG&7]" to {_p::*}
+	send {_s} to {_p::*}
+
+command /debug <text>:
+	trigger:
+		set {_p} to "&7[&cDEBUG&7]%nl%"
+		if arg-1 = "hand" or "tool":
+			set {_i} to player's tool
+			if {_i} != air:
+				send formatted "T: <tooltip:%itemToString({_i}, true, "" "")%>&7[&dDEBUG&7] &bTool"
+			else:
+				debug(player, "&cTool is empty!")
+		else if arg-1 = "block":
+			set {_b} to target block of player
+			if {_i} != air:
+				send formatted "T: <tooltip:%blockToString({_b}, true, "" "")%>&7[&dDEBUG&7] &bTarget Block"
+			else:
+				send formatted "T: <tooltip:&cNONE>&7[&dDEBUG&7] &bTarget Block"
+		else if arg-1 = "entity":
+			set {_e} to target entity of player
+			if {_e} is set:
+				send formatted "T: <tooltip:%entityToString({_e}, true, "" "")%>&7[&dDEBUG&7] &bTarget Entity"
+			else:
+				send formatted "T: <tooltip:&cNONE>&7[&dDEBUG&7] &bTarget Entity"
+
+on tab complete of "/debug":
+	set tab completions for position 1 to "hand", "block" and "entity"
+
+every 5 ticks:
+	loop all players:
+		loop item frames in radius 1 around loop-player:
+			if item of loop-item frame is mossy cobble:
+				damage loop-player by 0.5
+				push loop-player forward with speed 2
