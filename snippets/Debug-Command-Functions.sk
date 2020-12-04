@@ -1,4 +1,12 @@
 
+# Debug Command and Functions
+# By: ShaneBee
+
+# Requires: SkBee
+
+# This simple script allows you to debug blocks/items/entities
+# Includes and easy to use command as well as some functions you can use elsewhere
+
 # COMMAND
 
 # Handy little debug command to get info about your tool, target block or target entity
