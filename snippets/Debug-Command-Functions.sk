@@ -1,0 +1,110 @@
+
+# COMMAND
+
+# Handy little debug command to get info about your tool, target block or target entity
+command /debug <text>:
+	trigger:
+		set {_p} to "&7[&cDEBUG&7]%nl%"
+		if arg-1 = "hand" or "tool":
+			set {_i} to player's tool
+			if {_i} != air:
+				send formatted "T: <tooltip:%itemToString({_i}, true, "" "")%>&7[&dDEBUG&7] &bTool"
+			else:
+				send formatted "T: <tooltip:&cNONE>&7[&dDEBUG&7] &bTool"
+		else if arg-1 = "block":
+			set {_b} to target block of player
+			if {_i} != air:
+				send formatted "T: <tooltip:%blockToString({_b}, true, "" "")%>&7[&dDEBUG&7] &bTarget Block"
+			else:
+				send formatted "T: <tooltip:&cNONE>&7[&dDEBUG&7] &bTarget Block"
+		else if arg-1 = "entity":
+			set {_e} to target entity of player
+			if {_e} is set:
+				send formatted "T: <tooltip:%entityToString({_e}, true, "" "")%>&7[&dDEBUG&7] &bTarget Entity"
+			else:
+				send formatted "T: <tooltip:&cNONE>&7[&dDEBUG&7] &bTarget Entity"
+
+on tab complete of "/debug":
+	set tab completions for position 1 to "hand", "block" and "entity"
+
+
+# FUNCTIONS
+# Some handly little functions used for debugging
+
+# Location to String function
+# This function returns a location as an easy to use String
+# loc = the location to stringify
+# block = if false, will include yaw/pitch
+# pretty = whether it returns with colors
+# split = characters to split this string at into new lines (usually spaces)
+function locToString(loc: location, block: boolean=true, pretty: boolean=true, split: string = "") :: string:
+	set {_n} to locToNBT({_loc}, {_block})
+	if {_pretty} = true:
+		return "&bLocation&r%pretty nbt of {_n} with split {_split}%"
+	return "Location%{_n}%"
+
+# Location to NBT compound
+# This function returns a location as a serialized NBT compound
+# loc = the location to serialize
+# block = if true will not include yaw/pitch
+function locToNBT(loc: location, block: boolean) :: nbt compound:
+	set {_n} to nbt compound of "{}"
+	set tag "world" of {_n} to "%world of {_loc}%"
+	set tag "x" of {_n} to x coord of {_loc}
+	set tag "y" of {_n} to y coord of {_loc}
+	set tag "z" of {_n} to z coord of {_loc}
+	if {_block} = false:
+		set tag "pitch" of {_n} to 0.0
+		set tag "yaw" of {_n} to yaw of {_loc}
+	return {_n}
+
+# Block to String
+# This function returns the a block as a string full of handy information
+# b = the block to stringify
+# pretty = if the string should be colored
+# split = characters to split this string at into new lines (usually spaces)
+function blockToString(b: block, pretty: boolean = true, split: string = "") :: string:
+	set {_n} to nbt compound of "{}"
+	set tag "alias" of {_n} to "%{_b}%"
+	set tag "data" of {_n} to "%block data of {_b}%"
+	set tag "pos" of {_n} to locToNBT(({_b} offset by vector(-0.5, -0.5, -0.5)), true)
+	set {_nbt} to nbt compound copy of {_b}
+	delete tag "x" of {_nbt}
+	delete tag "y" of {_nbt}
+	delete tag "z" of {_nbt}
+	delete tag "id" of {_nbt}
+	set tag "nbt" of {_n} to {_nbt}
+	if {_pretty} = true:
+		return "&bBlock&r%pretty nbt of {_n} with split {_split}%"
+	return "Block%{_n}%"
+
+# Item to String
+# This functions returns an item as a string full of handy information
+# i = item to stringify
+# pretty = if the string should be colored
+# split = characters to split this string at into new lines (usually spaces)
+function itemToString(i: itemtype, pretty: boolean = true, split: string = "") :: string:
+	set {_nbt} to nbt compound of "{}"
+	set tag "alias" of {_nbt} to "%{_i}%"
+	set tag "nbt" of {_nbt} to nbt compound of {_i}
+	if {_pretty} = true:
+		return "&bItem&r%pretty nbt of {_nbt} with split {_split}%"
+	return "Item%{_nbt}%"
+
+# Entity to String
+# This functions returns an entity as a string full of handy information
+# e = entity to stringify
+# pretty = if the string should be colored
+# split = characters to split this string at into new lines (usually spaces)
+function entityToString(e: entity, pretty: boolean = true, split: string = "") :: string:
+	set {_n} to nbt compound of "{}"
+	set tag "type" of {_n} to "%{_e}%"
+	set tag "pos" of {_n} to locToNBT({_e}, false)
+	set tag "id" of {_n} to "%tag ""UUID"" of nbt compound of {_e}%"
+	if {_pretty} = true:
+		return "&bEntity&r%pretty nbt of {_n} with split {_split}%"
+	return "Entity%{_n}%"
+
+
+
+
