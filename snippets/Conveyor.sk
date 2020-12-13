@@ -1,0 +1,124 @@
+# Conveyors
+# By ShaneBee
+
+# Requires: Skript and SkBee
+
+# This is HEAVILY a work in progress script. This is not the final product
+
+
+options:
+	# Speed of the conveyor (seems to break above .45)
+	speed: .20
+
+function reposition(e: entity, b: block, d: string):
+	set {_custom} to tag "custom" of nbt compound of {_e}
+
+	teleport {_e} to location -0.5 above {_b}
+	set tag "direction" of {_custom} to {_d}
+	set tag "custom" of nbt compound of {_e} to {_custom}
+
+function getVelocity(e: entity, b: block) :: vector:
+	set {_nbt} to nbt compound of {_e}
+	set {_custom} to tag "custom" of {_nbt}
+	set {_dir} to tag "direction" of {_custom}
+	
+	set {_tag} to block data tag "shape" of {_b}
+
+
+	if {_tag} = "ascending_east":
+		if {_dir} = "east":
+			set {_vec} to vector({@speed}, {@speed}, 0)
+		else if {_dir} = "west":
+			set {_vec} to vector(-{@speed}, -{@speed}, 0)
+	else if {_tag} = "ascending_west":
+		if {_dir} = "east":
+			set {_vec} to vector({@speed}, -{@speed}, 0)
+		else if {_dir} = "west":
+			set {_vec} to vector(-{@speed}, {@speed}, 0)
+	else if {_tag} = "ascending_north":
+		if {_dir} = "north":
+			set {_vec} to vector(0, {@speed}, -{@speed})
+		else if {_dir} = "south":
+			set {_vec} to vector(0, -{@speed}, {@speed})
+	else if {_tag} = "ascending_south":
+		if {_dir} = "north":
+			set {_vec} to vector(0, -{@speed}, -{@speed})
+		else if {_dir} = "south":
+			set {_vec} to vector(0, {@speed}, {@speed})
+
+
+	else if {_tag} = "north_south":
+		if {_dir} = "north":
+			set {_vec} to vector(0, 0, -{@speed})
+		else if {_dir} = "south":
+			set {_vec} to vector(0, 0, {@speed})
+	else if {_tag} = "east_west":
+		if {_dir} = "east":
+			set {_vec} to vector({@speed}, 0, 0)
+		else if {_dir} = "west":
+			set {_vec} to vector(-{@speed}, 0, 0)
+	#! CORNER !#
+	else if {_tag} = "north_west":
+		if {_dir} = "east" or "north":
+			if {_dir} = "east":
+				reposition({_e}, {_b}, "north")
+			set {_vec} to vector(0, 0, -{@speed})
+		else if {_dir} = "south" or "west":
+			if {_dir} = "south":
+				reposition({_e}, {_b}, "west")
+			set {_vec} to vector(-{@speed}, 0, 0)
+	else if {_tag} = "south_west":
+		if {_dir} = "north" or "west":
+			if {_dir} = "north":
+				reposition({_e}, {_b}, "west")
+			set {_vec} to vector(-{@speed}, 0, 0)
+		else if {_dir} = "east" or "south":
+			if {_dir} = "east":
+				reposition({_e}, {_b}, "south")
+			set {_vec} to vector(0, 0, {@speed})
+	else if {_tag} = "south_east":
+		if {_dir} = "west" or "south":
+			if {_dir} = "west":
+				reposition({_e}, {_b}, "south")
+			set {_vec} to vector(0, 0, {@speed})
+		else if {_dir} = "north" or "east":
+			if {_dir} = "north":
+				reposition({_e}, {_b}, "east")
+			set {_vec} to vector({@speed}, 0, 0)
+	else if {_tag} = "north_east":
+		if {_dir} = "south" or "east":
+			if {_dir} = "south":
+				reposition({_e}, {_b}, "east")
+			set {_vec} to vector({@speed}, 0, 0)
+		else if {_dir} = "west" or "north":
+			if {_dir} = "west":
+				reposition({_e}, {_b}, "north")
+			set {_vec} to vector(0, 0, -{@speed})
+	return {_vec}
+
+function conveyor(e: entity):
+	while {_e} is alive:
+		if block at {_e} = rail:
+			set velocity of {_e} to getVelocity({_e}, block at {_e})
+		else if block below {_e} = rail:
+			set velocity of {_e} to getVelocity({_e}, block below {_e})
+		else:
+			exit loop
+		wait 1 ticks
+
+command /test <text>:
+	trigger:
+		set {_l} to location of target block
+		loop 20 times:
+			spawn a dropped dirt -0.5 above {_l} with nbt "{Item:%nbt compound of player's tool%,PickupDelay:32767,Motion:[0,0,0]}"
+			set {_e} to last spawned entity
+			set gravity of {_e} to false
+
+			set {_nbt} to nbt compound of {_e}
+			set {_c} to tag "custom" of {_nbt}
+			set tag "direction" of {_c} to arg-1
+			set tag "custom" of {_nbt} to {_c}
+			
+			conveyor({_e})
+			wait 2 ticks
+		#kill {_e}
