@@ -1,0 +1,50 @@
+
+#! Run this command with the world you wanna copy to load the copied world !#
+command /loadworld <text="world">:
+	trigger:
+		set {_world} to world("%arg-1%_copy")
+		if {_world} is set:
+			send "&7[&bChunk&3Fixer&7] &cThe world is already loaded!"
+			stop
+		send "&7[&bChunk&3Fixer&7] &aLoading world..."
+		set {_n} to now
+		set {_w} to world creator named "%arg-1%_copy" to copy world(arg-1)
+		load world from creator {_w}
+		wait 1 tick
+		send "&7[&bChunk&3Fixer&7] &aWorled loaded in &b%difference between now and {_n}%"
+
+on tab complete of "/loadworld":
+	set tab completions for position 1 to worlds
+
+command /fixchunk:
+	trigger:
+		set {_w} to "%world of player%"
+		set {_w} to world("%{_w}%_copy")
+		if {_w} is not set:
+			send formatted "&7[&bChunk&3Fixer&7] &cThe world is not loaded! &6Run <sgt:/loadworld %world of player%><tooltip:Click to load world>&a/loadworld %world of player%<reset> &6to load the world!"
+			stop
+		set {_l} to location of target block of player
+		if {_l} is not set:
+			set {_l} to location of player
+		fixChunk({_l}, {_w})
+
+function fixChunk(loc: location, w: world):
+	if {_w} is not set:
+		stop
+	set {_chunk1} to chunk at {_loc}
+	set world of {_loc} to {_w}
+	set {_chunk2} to chunk at {_loc}
+	loop integers between 0 and 15:
+		loop integers between 0 and 15:
+			loop integers between -64 and 140:
+				set {_x} to loop-number-1
+				set {_z} to loop-number-2
+				set {_y} to loop-number-3
+				set {_b1} to block at {_x}, {_y}, {_z} in {_chunk1}
+				set {_b2} to block at {_x}, {_y}, {_z} in {_chunk2}
+				set {_d1} to block data of {_b1}
+				set {_d2} to block data of {_b2}
+				if {_d1} != {_d2}:
+					set block data of block at {_b1} without updates to {_d2}
+		wait 1 tick
+
