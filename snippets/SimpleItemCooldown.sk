@@ -1,0 +1,8 @@
+on right click:
+    if player's tool = diamond shovel:
+        if {delay::%uuid of player%} > now:
+            set {_wait} to difference between {delay::%uuid of player%} and now
+            send "You gotta wait %{_wait}%"
+            cancel event
+        else:
+            set {delay::%uuid of player%} to 5 minutes from now
