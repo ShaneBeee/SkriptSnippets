@@ -1,0 +1,68 @@
+#! A fun little script to visualize entities pathfinding !#
+
+function draw(l1: location, l2: location, c: color):
+	set {_v} to vector between {_l1} and {_l2}
+	set {_d} to distance between {_l1} and {_l2}
+	loop ({_d} / 0.2) times:
+		set vector length of {_v} to (loop-value * 0.2)
+		draw 1 of dust using dustOption({_c}, 0.8) at {_l1} ~ {_v}
+
+function path(e: entity):
+	while path points of {_e} is set:
+		delete {_l1}
+		set {_s} to floor(150 / (size of path points of {_e}))
+		set {_g} to 100
+		set {_b} to 200
+		loop path points of {_e}:
+			add {_s} to {_g}
+			remove {_s} from {_b}
+			set {_rgb} to rgb(0, {_g}, {_b})
+			if {_l1} is not set:
+				set {_l1} to location of block at loop-value
+			else:
+				set {_l2} to location of block at loop-value
+				draw({_l1}, {_l2}, {_rgb})
+				set {_l1} to location of block at loop-value
+		if {_e} is not alive:
+			stop
+		if {-path} is not set:
+			stop
+		wait 5 ticks
+
+on entity starts pathfinding:
+	if {-path} is not set:
+		stop
+	set {_e} to event-entity
+	if type of {_e} != {-path}:
+		stop
+	
+	wait 1 tick
+	path({_e})
+
+command /path [<string="disable">]:
+	trigger:
+		if {-path} is not set:
+			set {_e} to arg-1
+			replace "_" with " " in {_e}
+			set {_e} to {_e} parsed as entity type
+			if {_e} is not set:
+				send "&7[&bPath&3Finder&7] &cInvalid entity type &b%arg-1%"
+				stop
+			set {-path} to {_e}
+			send "&7[&bPath&3Finder&7] &aEnabled for &b%{_e}%"
+		else:
+			delete {-path}
+			send "&7[&bPath&3Finder&7] &cDisabled"
+
+
+on load:
+	delete {-etypes::*}
+	loop all available entity types:
+		set {_e} to "%loop-value%"
+		replace " " with "_" in {_e}
+		add {_e} to {-etypes::*}
+	add "disable", "living_entity", "mob", "monster", "creature", "animal", "golem", "water_mob", "raider", "illager" and "spellcaster" to {-etypes::*}
+
+on tab complete of "/path":
+	set tab completions for position 1 to {-etypes::*}
+ 
