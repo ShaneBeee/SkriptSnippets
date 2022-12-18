@@ -1,3 +1,4 @@
+# REQUIRES SkBee
 
 #! Run this command with the world you wanna copy to load the copied world !#
 command /loadworld <text="world">:
