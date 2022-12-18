@@ -1,0 +1,28 @@
+# Requires SkBee
+
+# This snippet allows your players to be ordered in the tablist based on their rank
+
+#! Setup prefixes for Teams !#
+on load:
+	set team prefix of team named "a-team" to "&7[&bOWNER&7] "
+	set team prefix of team named "b-team" to "&7[&aADMIN&7] "
+	set team prefix of team named "c-team" to "&7[&6MOD&7] "
+	set team prefix of team named "d-team" to "&7[&dVIP&7] "
+	# more if you'd like
+	set team prefix of team named "z-team" to "&7[&cPLAYER&7] "
+
+#! Simple Function To Rank Player!#
+function p(p: player):
+	if {_p} has permission "rank.owner":
+		set {_t} to team named "a-team"
+	else if {_p} has permission "rank.admin":
+		set {_t} to team named "b-team"
+	else if {_p} has permission "rank.mod":
+		set {_t} to team named "c-team"
+	else:
+		set {_t} to team named "z-team"
+
+	add {_p} to team entries of {_t}
+
+on connect:
+	p(player)
