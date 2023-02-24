@@ -3,6 +3,8 @@
 
 on right click holding any hoe:
 	# This means the cooldown is in the future, and the player has to wait
+	# Even though we are using `minecraft name of player's tool` here, 
+	# you could also just use something like `hoe` if you want to keep it more generalized or whatever you feel like using
 	if {cooldowns::%uuid of player%::%minecraft name of player's tool%} > now:
 		cancel event
 		# we get a simple difference between now and our cooldown, and let the player know how long they need to wait
