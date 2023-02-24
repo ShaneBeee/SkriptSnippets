@@ -1,0 +1,17 @@
+# Simple Item Cooldown
+# By: ShaneBee
+
+on right click holding any hoe:
+	# This means the cooldown is in the future, and the player has to wait
+	if {cooldowns::%uuid of player%::%minecraft name of player's tool%} > now:
+		cancel event
+		# we get a simple difference between now and our cooldown, and let the player know how long they need to wait
+		set {_diff} to difference between {cooldowns::%uuid of player%::%minecraft name of player's tool%} and now
+		send "You have to wait %{_diff}% to use this tool"
+	else:
+		# If the cooldown isn't set or the time has passed we allow the player to use the tool then set the cooldown
+		set {cooldowns::%uuid of player%::%minecraft name of player's tool%} to 10 seconds from now
+
+on quit:
+	# Delete this to prevent clogging up the variable file
+	delete {cooldowns::%uuid of player%::*}
