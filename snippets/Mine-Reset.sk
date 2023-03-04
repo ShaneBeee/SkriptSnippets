@@ -1,0 +1,72 @@
+# Simple Mine Reset
+# By ShaneBee
+
+# Reset a block in the mine
+# Change percents/ores to whatever you want
+function resetBlock(b: block):
+	if chance of 1%:
+		set block at {_b} to diamond ore
+	else if chance of 2%:
+		set block at {_b} to emerald ore
+	else if chance of 5%:
+		set block at {_b} to redstone ore
+	else if chance of 7%:
+		set block at {_b} to gold ore
+	else if chance of 7%:
+		set block at {_b} to iron ore
+	else if chance of 7%:
+		set block at {_b} to copper ore
+	else if chance of 15%:
+		set block at {_b} to coal ore
+	else:
+		set block at {_b} to stone
+
+# Will reset mine from left to right
+function resetMineLeftRight(l1: location, l2: location):
+	set {_x1} to floor(x coord of {_l1})
+	set {_x2} to floor(x coord of {_l2})
+	set {_y1} to floor(y coord of {_l1})
+	set {_y2} to floor(y coord of {_l2})
+	set {_z1} to floor(z coord of {_l1})
+	set {_z2} to floor(z coord of {_l2})
+	loop integers between {_x1} and {_x2}:
+		loop integers between {_z1} and {_z2}:
+			loop integers between {_y1} and {_y2}:
+				set {_b} to block at location(loop-number-1, loop-number-3, loop-number-2)
+				resetBlock({_b})
+		wait 1 tick
+
+# Will reset mine from bottom up
+function resetMineBottomUp(l1: location, l2: location):
+	set {_x1} to floor(x coord of {_l1})
+	set {_x2} to floor(x coord of {_l2})
+	set {_y1} to floor(y coord of {_l1})
+	set {_y2} to floor(y coord of {_l2})
+	set {_z1} to floor(z coord of {_l1})
+	set {_z2} to floor(z coord of {_l2})
+	loop integers between {_y1} and {_y2}:
+		loop integers between {_x1} and {_x2}:
+			loop integers between {_z1} and {_z2}:
+				set {_b} to block at location(loop-number-2, loop-number-1, loop-number-3)
+				resetBlock({_b})
+		wait 1 tick
+
+# Will reset mine from top down
+function resetMineTopDown(l1: location, l2: location):
+	set {_x1} to floor(x coord of {_l1})
+	set {_x2} to floor(x coord of {_l2})
+	set {_y1} to floor(y coord of {_l1})
+	set {_y2} to floor(y coord of {_l2})
+	set {_z1} to floor(z coord of {_l1})
+	set {_z2} to floor(z coord of {_l2})
+	loop reversed integers between {_y1} and {_y2}:
+		loop integers between {_x1} and {_x2}:
+			loop integers between {_z1} and {_z2}:
+				set {_b} to block at location(loop-number-2, loop-number-1, loop-number-3)
+				resetBlock({_b})
+		wait 1 tick
+
+# Simple example usage
+command /test:
+	trigger:
+		resetMineTopDown({1},{2})
