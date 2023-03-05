@@ -1,0 +1,96 @@
+# Server Stats
+# By ShaneBee
+
+# THIS IS NOT PRODUCTION SAFE
+# IT IS NOT EFFICIENT AT ALL
+# USE WITH CAUTION
+
+function updateChunks():
+	wait 1 tick
+	set {-cw} to size of loaded chunks of world "world"
+	set {-cn} to size of loaded chunks of world "world_nether"
+
+on load:
+	set {-grad} to -1
+	updateChunks()
+
+every tick:
+	set {-at} to server.getServer().getAverageTickTime()
+	if {-at} > 15:
+		set {-lagging} to true
+	else if {-at} < 8:
+		set {-lagging} to false
+	if {-at} < 10:
+		set {-tick} to "&a%{-at}%"
+	else if {-at} < 20:
+		set {-tick} to "<##F5DF07>%{-at}%"
+	else if {-at} < 40:
+		set {-tick} to "<##F49822>%{-at}%"
+	else if {-at} < 50:
+		set {-tick} to "&c%{-at}%"
+	else:
+		set {-tick} to "&4%{-at}%"
+
+	add 0.025 to {-grad}
+	if {-grad} > 1:
+		set {-grad} to -1
+
+on chunk load:
+	updateChunks()
+
+on chunk unload:
+	updateChunks()
+
+every second:
+	set {_t::*} to tps
+	loop {_t::*}:
+		if loop-value > 18:
+			set {_tps::%loop-index%} to "&a%loop-value%"
+		else if loop-value > 15:
+			set {_tps::%loop-index%} to "&e%loop-value%"
+		else:
+			set {_tps::%loop-index%} to "&c%loop-value%"
+	set {-tps} to join {_tps::*} using "&7, "
+
+function updateBoard(p: player):
+	set line 15 of {_p}'s scoreboard to "<##11C3D8>Loaded Chunks:"
+	set line 12 of {_p}'s scoreboard to " "
+	set line 11 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
+	set line 9 of {_p}'s scoreboard to "<##11C3D8>TPS:"
+	set line 7 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
+	while {_p} is online:
+		if {-boards} is not set:
+			exit loop
+		set {_m} to mini message from "<grey>---[<gradient:##F008F4:##08F4B4:%{-grad}%>SERVER STATS<grey>]---"
+		set title of {_p}'s scoreboard to {_m}
+		set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-cw}%"
+		set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-cn}%"
+		set line 10 of {_p}'s scoreboard to "&7- <##11D875>%{-tick}%&7ms"
+		set line 8 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
+		set line 6 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%size of all entities where [input is ticking]%&7/<##11D875>%size of all entities%"
+		set line 5 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%size of all mobs where [input is ticking]%&7/<##11D875>%size of all mobs%"
+		set line 4 of {_p}'s scoreboard to "&7- &bMonsters: <##11D875>%size of getMonsters() where [input is ticking]%&7/<##11D875>%size of getMonsters()%"
+		set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%size of all villagers where [input is ticking]%&7/<##11D875>%size of all villagers%"
+		set {_f} to size of all entities where ["%input%" contains "falling"]
+		set {_ft} to size of (all entities where ["%input%" contains "falling"]) where [input is ticking]
+		set line 2 of {_p}'s scoreboard to "&7- &bFalling: <##11D875>%{_ft}%&7/<##11D875>%{_f}%"
+		set line 1 of {_p}'s scoreboard to "&7- &bDropped: <##11D875>%size of all dropped items where [input is ticking]%&7/<##11D875>%size of all dropped items%"
+		wait 1 tick
+
+on join:
+	updateBoard(player)
+
+on unload:
+	delete {-boards}
+
+on load:
+	wait 2 ticks
+	set {-boards} to true
+	loop all players:
+		updateBoard(loop-player)
+
+command /stats:
+	trigger:
+		toggle scoreboard of player
+
+
