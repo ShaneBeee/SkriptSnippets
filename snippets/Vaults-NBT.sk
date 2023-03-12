@@ -1,29 +1,26 @@
-
 # Vaults
 # By: ShaneBee
-# Requires Skript 2.5+, SkBee 1.7+
+# Requires Skript 2.6+, SkBee 2.7.0+
 
 # This Skript snippet shows a simple method for saving vaults into a Player's NBT
 # By using this method you can greatly reduce the amount of variables your server is using
 
 # Save the inventory contents to the player's NBT
 function saveInv(p: player, name: string):
-	loop slots of current inventory of {_p} times:
-		if slot loop-number -1 of current inventory of {_p} is not air:
-			set {_i} to nbt compound of slot loop-number -1 of current inventory of {_p}
-			set tag "Slot" of {_i} to floor(loop-number -1) #for some reason its saving as a float, so we do this workaround
+	loop (slots of current inventory of {_p}) times:
+		set {_s} to loop-number - 1
+		if slot {_s} of current inventory of {_p} is not air:
+			set {_item} to slot {_s} of current inventory of {_p}
+			set {_i} to full nbt of {_item}
+			set byte tag "Slot" of {_i} to {_s}
 			add {_i} to {_items::*}
 	set {_n} to nbt compound of {_p}
-	set {_c} to tag "custom" of {_n}
-	delete tag {_name} of {_c}
-	set tag {_name} of {_c} to {_items::*}
-	set tag "custom" of {_n} to {_c}
+	set compound list tag "custom;vaults;%{_name}%" of {_n} to {_items::*}
 
 # Load the inventory contents from the player's NBT
 function loadInv(p: player, name: string):
 	set {_n} to nbt compound of {_p}
-	set {_c} to tag "custom" of {_n}
-	set {_v::*} to tag {_name} of {_c}
+	set {_v::*} to compound list tag "custom;vaults;%{_name}%" of {_n}
 	loop {_v::*}:
 		set {_s} to tag "Slot" of loop-value
 		set {_i} to nbt item from loop-value
