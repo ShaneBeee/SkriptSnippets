@@ -1,0 +1,79 @@
+# Spiral
+# By Shane Bee
+
+# This is used to creates spirals, and log the location of the last location in a spiral
+# This could be useful for a SkyBlock system
+
+#! CREATE OFFSETS !#
+# This just creates our offset vars
+on load:
+	# offset is 2, change to your liking
+	set {-dir::1} to vector(2,0,0)
+	set {-dir::2} to vector(0,0,-2)
+	set {-dir::3} to vector(-2,0,0)
+	set {-dir::4} to vector(0,0,2)
+
+#! LOAD INITIAL NBT DATA !#
+# This creates your INITIAL NBT compound for storing data
+# This only needs to be run once obviously
+on load:
+	if {-spiral::nbt} is not set:
+		set {-spiral::nbt} to nbt compound from "{}"
+		set int tag "gape" of {-spiral::nbt} to 0
+		set int tag "pos" of {-spiral::nbt} to 0
+		set byte tag "vec" of {-spiral::nbt} to 1
+		# Change this location to where you want your spiral to start
+		set compound tag "lastLoc" of {-spiral::nbt} to saveLoc(location(1,100,1, world "world"))
+
+#! GET LOC FROM NBT FUNCTION !#
+# this just gets a location from NBT you wont need to worry about this
+function getLoc(n: nbt compound) :: location:
+	set {_x} to tag "x" of {_n}
+	set {_y} to tag "y" of {_n}
+	set {_z} to tag "z" of {_n}
+	set {_w} to world(tag "world" of {_n})
+	set {_l} to location({_x}, {_y}, {_z}, {_w})
+	return {_l}
+
+#! SAVE LOC TO NBT FUNCTION !#
+# this just saves a location into NBT format, you wont need to worry about this
+function saveLoc(l: location) :: nbt compound:
+	set {_n} to nbt compound from "{}"
+	set int tag "x" of {_n} to x coord of {_l}
+	set int tag "y" of {_n} to y coord of {_l}
+	set int tag "z" of {_n} to z coord of {_l}
+	set {_w} to "%world of {_l}%"
+	set tag "world" of {_n} to {_w}
+	return {_n}
+
+#! MAIN SPIRAL FUNCTION !#
+# this gets the next location in your spiral
+# this is the key ingredient you are going to want to use
+function getNext() :: location:
+	set {_lastLoc} to compound tag "lastLoc" of {-spiral::nbt}
+	set {_loc} to getLoc({_lastLoc})
+	set {_gape} to tag "gape" of {-spiral::nbt}
+	set {_pos} to tag "pos" of {-spiral::nbt}
+	set {_vec} to tag "vec" of {-spiral::nbt}
+	set {_loc} to {_loc} ~ {-dir::%{_vec}%}
+	add 1 to {_pos}
+	if {_pos} >= {_gape}:
+		set {_pos} to 0
+		add 1 to {_vec}
+		if {_vec} = 2 or 4:
+			add 1 to {_gape}
+	if {_vec} > 4:
+		set {_vec} to 1
+	set int tag "gape" of {-spiral::nbt} to {_gape}
+	set int tag "pos" of {-spiral::nbt} to {_pos}
+	set byte tag "vec" of {-spiral::nbt} to {_vec}
+	set compound tag "lastLoc" of {-spiral::nbt} to saveLoc({_loc})
+	return {_loc}
+
+# this was just a test to show how you get the next location in your spiral
+command /test:
+	trigger:
+		loop 10 times:
+			set {_loc} to getNext()
+			set block at {_loc} to white wool
+			wait 1 ticks
