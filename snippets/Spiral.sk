@@ -23,7 +23,7 @@ on load:
 		set int tag "pos" of {-spiral::nbt} to 0
 		set byte tag "vec" of {-spiral::nbt} to 1
 		# Change this location to where you want your spiral to start
-		set compound tag "lastLoc" of {-spiral::nbt} to saveLoc(location(1,100,1, world "world"))
+		set compound tag "lastLoc" of {-spiral::nbt} to saveLoc(location(1,129,1, world "world"))
 
 #! GET LOC FROM NBT FUNCTION !#
 # this just gets a location from NBT you wont need to worry about this
@@ -31,7 +31,8 @@ function getLoc(n: nbt compound) :: location:
 	set {_x} to tag "x" of {_n}
 	set {_y} to tag "y" of {_n}
 	set {_z} to tag "z" of {_n}
-	set {_w} to world(tag "world" of {_n})
+	set {_ws} to tag "world" of {_n}
+	set {_w} to world({_ws})
 	set {_l} to location({_x}, {_y}, {_z}, {_w})
 	return {_l}
 
