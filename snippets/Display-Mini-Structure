@@ -1,0 +1,36 @@
+# Mini Structure
+# By: ShaneBee
+
+# This little script allows you to place scaled (up/down) versions of structures
+# using block display entities.
+
+#! FUNCTION !#
+# Place a fake block
+function placeFakeBlock(loc: location, data: block data, size: number = 1):
+	if {_data} = air[]:
+		stop
+	le spawn block display at {_loc}
+	set {_e} to last spawned entity
+	set display block data of {_e} to {_data}
+	set display scale of {_e} to vector({_size}, {_size}, {_size})
+
+#! COMMAND !#
+# Command to place your mini (or large) structure
+# structure = a structure namespace, such as "minecraft:village/taiga/houses/taiga_masons_house_1", "test", "skbee:test"
+# scale = the size you want this to produce, such as 0.5 (half the size), 2 (twice the size)
+command /ministructure <structure:string> <scale:number=1>:
+	trigger:
+		set {_s} to structure named {_structure}
+		set {_loc} to location of target block ~ vector(-0.5,0.5,-0.5)
+		loop blockstates of structure {_s}:
+			set {_data} to block data of blockstate loop-value
+			set {_off} to offset of blockstate loop-value
+			set x component of {_off} to x component of {_off} * {_scale}
+			set y component of {_off} to y component of {_off} * {_scale}
+			set z component of {_off} to z component of {_off} * {_scale}
+			set {_l} to {_loc} ~ {_off}
+			placeFakeBlock({_l}, {_data}, {_scale})
+
+on tab complete of "/ministructure":
+	set tab completions for position 1 to "<structure>"
+	set tab completions for position 2 to "<scale>"
