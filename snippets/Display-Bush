@@ -3,6 +3,8 @@
 
 # This script is just a fun way of using Display Entities.
 
+# Requires Minecraft 1.19.4+ and SkBee 2.8.1+
+
 # Create custom item
 on load:
 	set {-bush::item::1} to player head with nbt from "{CustomModelData:12255,SkullOwner:{Id:[I;-1291184209,-1164161754,-1260656384,-1770925678],Properties:{textures:[{Value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNzA5ZWMwZDY0NWQwZDVhYTI3MTAwYTg4NmFiNzY0ZjI1ZjdmOWQwYTYwMzQ5ODEzYzQ2N2NmZTBkZGZiZDhlYyJ9fX0=""}]}}}"
