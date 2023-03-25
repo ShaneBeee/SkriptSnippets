@@ -4,6 +4,8 @@
 # This little script allows you to place scaled (up/down) versions of structures
 # using block display entities.
 
+# Requires Minecraft 1.19.4+ and SkBee 2.8.1+
+
 #! FUNCTION !#
 # Place a fake block
 function placeFakeBlock(loc: location, data: block data, size: number = 1):
