@@ -1,0 +1,71 @@
+# ChisledBlocks
+# By: ShaneBee
+
+# This script allows you to make blocks that you can chisel
+# It really has no purpose it was more so for fooling around
+
+# Requires Minecraft 1.19.4+, SkBee 2.8.1+ and Skript-Reflect
+
+# This just creates a var with all colored concrete blocks
+on load:
+	delete {-c::*}
+	loop all available block datas:
+		if "%loop-value%" contains "concrete":
+			if "%loop-value%" doesn't contain "powder":
+				add loop-value to {-c::*}
+#! FUNCTIONS !#
+# Place a fake block
+function placeFakeBlock(loc: location, data: block data, size: number = 1) :: entity:
+	if {_data} = air[]:
+		stop
+	#set {_loc} to {_loc} ~ vector(-0.25, 0, -0.25)
+	le spawn block display at {_loc}
+	set {_e} to last spawned entity
+	set display block data of {_e} to {_data}
+	set display scale of {_e} to vector({_size}, {_size}, {_size})
+	return {_e}
+
+# Place an interaction entity and display block scaled
+function f(l: location, scale: number):
+	set {_o} to {_scale} / 2
+	set {_loc} to {_l} ~ vector({_o}, 0, {_o})
+	le spawn interaction at {_loc}
+	set {_e} to last spawned entity
+
+	set interaction width of {_e} to {_scale}
+	set interaction height of {_e} to {_scale}
+
+	set {_d} to random element of {-c::*}
+	set {_b} to placeFakeBlock({_l}, {_d}, {_scale})
+	set tag "custom;block" of nbt of {_e} to uuid int array of {_b}
+
+command /chiselblock <scale:number=1>:
+	trigger:
+		set {_loc} to exact location of block above target block
+		loop {_scale} times:
+			loop {_scale}  times:
+				loop {_scale}  times:
+					set {_x} to (loop-value-1 - 1) / {_scale}
+					set {_y} to (loop-value-2 - 1) / {_scale}
+					set {_z} to (loop-value-3 - 1) / {_scale}
+					set {_l} to {_loc} ~ vector({_x}, {_y}, {_z})
+					set {_s} to 1 / {_scale}
+					f({_l}, {_s})
+
+
+#! EVENT HANDLERS !#
+on damage:
+	if "%victim.getType()%" contains "INTERACTION":
+		set {_n} to nbt of victim
+		set {_u} to uuid tag "custom;block" of {_n}
+		set {_e} to {_u} parsed as entity
+		kill {_e}
+		kill victim
+
+on right click:
+	if "%(clicked entity).getType()%" contains "INTERACTION":
+		cancel event
+		set {_n} to nbt of clicked entity
+		set {_u} to uuid tag "custom;block" of {_n}
+		set {_e} to {_u} parsed as entity
+		set display block item type of {_e} to type of player's tool
