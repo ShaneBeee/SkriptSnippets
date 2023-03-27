@@ -1,0 +1,27 @@
+# QuickSand
+# By: ShaneBee
+
+# This simple little script allows you to turn a block into quick sand
+
+# Requires Minecraft 1.19.4+ and SkBee 2.8.1+
+
+#! FUNCTION !#
+# Function to turn a block into quick sand
+function quickSand(b: block):
+	set {_l} to exact location of {_b}
+	le spawn block display at {_l}
+	set {_e} to last spawned entity
+	set display block data of {_e} to sand[]
+	set block at {_b} to cobweb
+	set {_n} to nbt of block at {_b}
+	set tag "custom;quickSand" of {_n} to uuid int array of {_e}
+
+#! EVENT HANDLER !#
+on break of cobweb:
+	set {_n} to nbt of event-block
+	if {_n} has tag "custom;quickSand":
+		cancel event
+		set event-block to air
+		set {_u} to uuid tag "custom;quickSand" of {_n}
+		set {_e} to {_u} parsed as entity
+		kill {_e}
