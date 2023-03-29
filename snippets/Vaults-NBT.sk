@@ -19,19 +19,20 @@ function saveInv(p: player, name: string):
 
 # Load the inventory contents from the player's NBT
 function loadInv(p: player, name: string):
+	set {_g} to chest inventory named "&3Vault ##%{_name}%" with 3 rows
 	set {_n} to nbt compound of {_p}
-	set {_v::*} to compound list tag "custom;vaults;%{_name}%" of {_n}
+	set {_v::*} to compound list tag "custom;vaults;Vault-%{_name}%" of {_n}
 	loop {_v::*}:
 		set {_s} to tag "Slot" of loop-value
 		set {_i} to nbt item from loop-value
-		set slot {_s} of current inventory of {_p} to {_i}
+		set slot {_s} of {_g} to {_i}
+	open {_g} to {_p}
 
 
 # Sample vault command for loading
 command /vault <number=1>:
 	trigger:
-		open chest inventory named "&3Vault ##%arg-1%" with 3 rows to player
-		loadInv(player, "Vault-%arg-1%")
+		loadInv(player, "%arg-1%")
 
 # Sample event for saving
 on inventory close:
