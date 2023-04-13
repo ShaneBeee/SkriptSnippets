@@ -5,6 +5,22 @@
 # IT IS NOT EFFICIENT AT ALL
 # USE WITH CAUTION
 
+import:
+	org.bukkit.entity.Enemy
+	org.bukkit.entity.Display
+
+function getMonsters() :: entities:
+	loop all entities:
+		if loop-entity is instance of Enemy:
+			add loop-entity to {_e::*}
+	return {_e::*}
+
+function getDisplayEntities() :: entities:
+	loop all entities:
+		if loop-entity is instance of Display:
+			add loop-entity to {_e::*}
+	return {_e::*}
+
 function updateChunks():
 	wait 1 tick
 	set {-cw} to size of loaded chunks of world "world"
@@ -54,10 +70,9 @@ every second:
 
 function updateBoard(p: player):
 	set line 15 of {_p}'s scoreboard to "<##11C3D8>Loaded Chunks:"
-	set line 12 of {_p}'s scoreboard to " "
-	set line 11 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
-	set line 9 of {_p}'s scoreboard to "<##11C3D8>TPS:"
-	set line 7 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
+	set line 12 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
+	set line 10 of {_p}'s scoreboard to "<##11C3D8>TPS:"
+	set line 8 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
 	while {_p} is online:
 		if {-boards} is not set:
 			exit loop
@@ -65,11 +80,12 @@ function updateBoard(p: player):
 		set title of {_p}'s scoreboard to {_m}
 		set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-cw}%"
 		set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-cn}%"
-		set line 10 of {_p}'s scoreboard to "&7- <##11D875>%{-tick}%&7ms"
-		set line 8 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
-		set line 6 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%size of all entities where [input is ticking]%&7/<##11D875>%size of all entities%"
-		set line 5 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%size of all mobs where [input is ticking]%&7/<##11D875>%size of all mobs%"
-		set line 4 of {_p}'s scoreboard to "&7- &bMonsters: <##11D875>%size of getMonsters() where [input is ticking]%&7/<##11D875>%size of getMonsters()%"
+		set line 11 of {_p}'s scoreboard to "&7- <##11D875>%{-tick}%&7ms"
+		set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
+		set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%size of all entities where [input is ticking]%&7/<##11D875>%size of all entities%"
+		set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%size of all mobs where [input is ticking]%&7/<##11D875>%size of all mobs%"
+		set line 5 of {_p}'s scoreboard to "&7- &bMonsters: <##11D875>%size of getMonsters() where [input is ticking]%&7/<##11D875>%size of getMonsters()%"
+		set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%size of getDisplayEntities() where [input is ticking]%&7/<##11D875>%size of getDisplayEntities()%"
 		set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%size of all villagers where [input is ticking]%&7/<##11D875>%size of all villagers%"
 		set {_f} to size of all entities where ["%input%" contains "falling"]
 		set {_ft} to size of (all entities where ["%input%" contains "falling"]) where [input is ticking]
@@ -92,5 +108,3 @@ on load:
 command /stats:
 	trigger:
 		toggle scoreboard of player
-
-
