@@ -1,0 +1,63 @@
+# C4
+# By: ShaneBee
+
+# This fun little script allows players to place C4 explosives at detonate them with a remote detonator
+
+# REQUIRES: SkBee
+
+options:
+	prefix: &7[&cC4&7]
+	# How many C4s can be placed at once
+	max c4: 40
+	# Power of C4 explosion
+	power: 8
+
+#! LOAD THE ITEMS !#
+on load:
+	set {_n} to nbt from "{SkullOwner:{Id:[I;1833486433,77415117,-1965145857,1385826899],Properties:{textures:[{Value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzQyNzQ3NTQ4OTE4NzMxZDY1ZDhlNTNlNWY5YTM3Nzg2YjdiOTcxNzFjYTcyNDA4ZDlhYTgzMzgxNDNmNTM5In19fQ==""}]}}}"
+	set {_l::1} to "&7- Place down"
+	set {_l::2} to "&7- Use detonator to detonate"
+	set {-c4} to player head with nbt {_n} named "&cC4" with lore {_l::*}
+
+	set {_n} to nbt from "{SkullOwner:{Id:[I;412561732,1822181074,-1787971855,699281441],Properties:{textures:[{Value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTQ2OTQ3ZTJjZmZkMzgwNDdkZTcwM2ZkOTg3OGFjZmM5OTQyZWI3MTJlZGM4ZjI1N2IxMjljYzEwZmFkMDY2NyJ9fX0=""}]}}}"
+	set {_l::1} to "&7Right-Click to detonate"
+	set {_l::2} to "&7placed C4"
+	set {-detonator} to player head with nbt {_n} named "&bDetonator" with lore {_l::*}
+
+
+#! COMMANDS !#
+# Give yourself a C4
+command /c4 <amount:number=1>:
+	trigger:
+		give player {_amount} of {-c4}
+
+# Give yourself a detonator
+command /detonator:
+	trigger:
+		give player 1 of {-detonator}
+
+#! EVENT HANDLING !#
+on place:
+	if 1 of player's tool is {-c4}:
+		if size of {-c4::%uuid of player%::*} >= {@max c4}:
+			cancel event
+			send "{@prefix} &cYou can only place {@max c4} C4!"
+		else:
+			set {-c4::%uuid of player%::%location of event-block%} to location of event-block
+
+on right click:
+	if 1 of player's tool = {-detonator}:
+		cancel event
+		if size of {-c4::%uuid of player%::*} < 1:
+			send "{@prefix} &cYou haven't placed any C4!"
+		else:
+			loop 5 times:
+				loop {-c4::%uuid of player%::*}:
+					lerp 1 vibration using vibration(loop-value-2, 3 seconds) at player
+				wait 3 ticks
+
+			wait 1.5 seconds
+			loop {-c4::%uuid of player%::*}:
+				set block at loop-value to air
+				create explosion of force {@power} at loop-value
+			delete {-c4::%uuid of player%::*}
