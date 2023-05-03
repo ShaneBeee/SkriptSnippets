@@ -1,0 +1,66 @@
+# Inventory Serializer
+# By: ShaneBee
+
+# This little snippet allows you to serialize/save a player's inventory into a spot in their NBT or into a variable
+# It also allows you to quickly and easily restore their inventory from NBT/Variable
+
+# REQUIRES: SkBee
+
+#! Save player's inventory in their NBT !#
+function saveInvNBT(p: player, key: string):
+	loop inventory of {_p}:
+		set {_s} to index of loop-slot
+		set {_i} to full nbt of loop-slot
+		set tag "Slot" of {_i} to {_s}
+		add {_i} to {_i::*}
+	set compound list tag "custom;SavedInv;%{_key}%" of nbt of {_p} to {_i::*}
+
+#! Restore player's inventory from their NBT !#
+function restoreInvNBT(p: player, key: string):
+	set {_i::*} to compound list tag "custom;SavedInv;%{_key}%" of nbt of {_p}
+	loop {_i::*}:
+		set {_s} to tag "Slot" of loop-value
+		set {_i} to nbt item from loop-value
+		set slot {_s} of {_p} to {_i}
+	delete tag "custom;SavedInv;%{_key}%" of nbt of {_p}
+
+#! Save player's inventory into a variable !#
+function saveInvVAR(p: player, key: string):
+	loop inventory of {_p}:
+		set {_s} to index of loop-slot
+		set {_i} to full nbt of loop-slot
+		set tag "Slot" of {_i} to {_s}
+		add {_i} to {_i::*}
+	set {_n} to nbt from "{}"
+	set compound list tag "SavedInv" of {_n} to {_i::*}
+	set {SavedInv::%uuid of {_p}%::%{_key}%} to {_n}
+
+#! Restore player's inventory from a variable !#
+function restoreInvVAR(p: player, key: string):
+	set {_i::*} to compound list tag "SavedInv" of {SavedInv::%uuid of {_p}%::%{_key}%}
+	loop {_i::*}:
+		set {_s} to tag "Slot" of loop-value
+		set {_i} to nbt item from loop-value
+		set slot {_s} of {_p} to {_i}
+	delete {SavedInv::%uuid of {_p}%::%{_key}%}
+
+#! EXAMPLE USAGES !#
+command /savetonbt:
+	trigger:
+		saveInvNBT(player, "backup")
+		clear inventory of player
+
+command /restorefromnbt:
+	trigger:
+		clear inventory of player
+		restoreInvNBT(player, "backup")
+
+command /savetovar:
+	trigger:
+		saveInvVAR(player, "backup")
+		clear inventory of player
+
+command /restorefromvar:
+	trigger:
+		clear inventory of player
+		restoreInvVAR(player, "backup")
