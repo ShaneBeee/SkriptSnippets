@@ -1,0 +1,26 @@
+# Tiny Text
+# By: ShaneBee
+
+# This little snippet converts regular text to "ᴛɪɴʏ ᴛᴇxᴛ"
+
+#! Setup variables for tiny text !#
+on load:
+	set {-tiny::*} to "ᴀʙᴄᴅᴇғɢʜɪᴊᴋʟᴍɴᴏᴘǫʀsᴛᴜᴠᴡxʏᴢ" split at ""
+	set {_lower} to "abcdefghijklmnopqrstuvwxyz"
+	set {-lower::*} to {_lower} split at ""
+	set {-upper::*} to (uppercase {_lower}) split at ""
+
+#! Function to make tiny text !#
+function tinyText(text: text) :: text:
+	loop {-tiny::*}:
+		replace {-lower::%loop-index%} and {-upper::%loop-index%} with loop-value in {_text}
+	return {_text}
+
+#! Example Usages !#
+command /tinytool <name:string>:
+	trigger:
+		set {_text} to tinyText(uncolored {_name})
+		set name of player's tool to "&b%{_text}%"
+
+on chat:
+	set message to tinyText(message)
