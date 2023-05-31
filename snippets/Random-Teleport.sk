@@ -1,0 +1,63 @@
+# Random Teleport
+# By: ShaneBee
+
+# A Simple little random teleport command, that won't lag your server
+
+# Requirements = SkBee 2.10.1+
+
+options:
+	# Max radius from 0,0
+	radius: 100000
+	# How many times to try look for a random location
+	# This typically shouldn't take more than 5 tries
+	attempts: 10
+
+#! FUNCTIONS !#
+# Check if a block is safe to spawn at
+function isSafeBlock(b: block) :: boolean:
+	if {_b} is not solid:
+		if {_b} != lava[] or water[]:
+			return true
+	return false
+
+# Get the highest safe block at a location
+function getHighestBlock(l: location) :: location:
+	if world of {_l} = world "world":
+		set {_b} to highest block at {_l}
+		if {_b} is any leaves:
+			loop blocks below block below {_b}:
+				if loop-block is solid:
+					if loop-block is not any leaves:
+						if isSafeBlock(block above loop-block) = true:
+							if isSafeBlock(block 2 above loop-block) = true:
+								return location 0.5 above loop-block
+		else if {_b} is solid:
+			return location 0.5 above {_b}
+	else if world of {_l} = world "world_nether":
+		loop blocks above {_l}:
+			if loop-block is solid:
+				if isSafeBlock(block above loop-block) = true:
+					if isSafeBlock(block 2 above loop-block) = true:
+						return location 0.5 above loop-block
+
+#! COMMAND !#
+command /rtp:
+	trigger:
+		send "&7[&bRTP&7] Looking for a suitable location..."
+		loop {@attempts} times:
+			set {_x} to random integer between -{@radius} and {@radius}
+			set {_z} to random integer between -{@radius} and {@radius}
+			set {_loc} to location({_x}, 1, {_z}, world of player)
+			async load chunk at {_loc}
+			set {_b} to getHighestBlock({_loc})
+			if {_b} is set:
+				set {_safe} to {_b}
+				exit loop
+
+		if {_safe} is set:
+			send "&7[&bRTP&7] &aFound a suitable location!"
+			set yaw of {_safe} to yaw of player
+			set pitch of {_safe} to pitch of player
+			teleport player to {_safe}
+		else:
+			send "&7[&bRTP&7] &cFailed to find a suitable location!"
