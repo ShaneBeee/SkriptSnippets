@@ -1,0 +1,57 @@
+# Simple Gui Examples
+# By: ShaneBee
+
+# This showcases simple examples of creating GUIs with skript-gui
+# I showcase 2 options here:
+# 1) On demand, the GUI is created each time the command is run (this can be hard on the server depending what you're doing)
+#    This way may be needed, if for example the GUI needs to change PER PLAYER
+
+# 2) On Load create GUI with ID. This cuts down on server resources, since we just make the GUI once and open when needed
+
+# Requirements: skript-gui (https://github.com/APickledWalrus/skript-gui/releases/latest)
+
+#! Create a gui on demand !#
+# Each time this command is run the GUI will be created
+command /spawn:
+	trigger:
+		# Create your gui
+		create gui with virtual chest inventory with 3 rows named "&a&lMy Gui":
+			# Format all slots to make sure player's cant put anything in the GUI
+			format gui slots (integers between 0 and 26) with grey stained glass pane named " "
+
+			# Format a slot to do something
+			format gui slot 0 with grass named "&bWORLD SPAWN":
+				# When the slot is clicked, the code in this section is executed
+				teleport player to spawn of world "world"
+				close inventory of player
+
+			format gui slot 1 with netherrack named "&cNETHER SPAWN":
+				teleport player to spawn of world "world_nether"
+				close inventory of player
+
+		# Open the gui to the player
+		open last gui to player
+
+#! Create a gui with an ID !#
+# This way the gui is created once, we don't need to keep creating it each time we need it
+# This saves server resources if a lot of people are running the command
+on load:
+	# Create your gui
+	create gui with id "spawn-gui" with virtual chest inventory with 3 rows named "&a&lMy Gui":
+		# Format all slots to make sure player's cant put anything in the GUI
+		format gui slots (integers between 0 and 26) with grey stained glass pane named " "
+
+		# Format a slot to do something
+		format gui slot 0 with grass named "&bWORLD SPAWN":
+			# When the slot is clicked, the code in this section is executed
+			teleport player to spawn of world "world"
+			close inventory of player
+
+		format gui slot 1 with netherrack named "&cNETHER SPAWN":
+			teleport player to spawn of world "world_nether"
+			close inventory of player
+
+command /spawn2:
+	trigger:
+		# Now we open the GUI from its ID rather than creating it all the time
+		open gui with id "spawn-gui" to player
