@@ -1,8 +1,12 @@
-# Requires SkBee
+# Sorted Tablist
+# By: ShaneBee
 
 # This snippet allows your players to be ordered in the tablist based on their rank
+# This snipped may not work with plugins like TAB or any other plugin that messes with vanilla teams
 
-#! Setup prefixes for Teams !#
+# Requirements = SkBee
+
+#! Setup teams and prefixes for teams !#
 on load:
 	set team prefix of team named "a-team" to "&7[&bOWNER&7] "
 	set team prefix of team named "b-team" to "&7[&aADMIN&7] "
@@ -12,7 +16,7 @@ on load:
 	set team prefix of team named "z-team" to "&7[&cPLAYER&7] "
 
 #! Simple Function To Rank Player!#
-function p(p: player):
+function rankPlayer(p: player):
 	if {_p} has permission "rank.owner":
 		set {_t} to team named "a-team"
 	else if {_p} has permission "rank.admin":
@@ -22,7 +26,11 @@ function p(p: player):
 	else:
 		set {_t} to team named "z-team"
 
+	# SkBee 2.11.0+
+	add {_p} to {_t}
+
+	# SkBee 2.10.0 or below
 	add {_p} to team entries of {_t}
 
 on connect:
-	p(player)
+	rankPlayer(player)
