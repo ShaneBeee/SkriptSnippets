@@ -14,6 +14,8 @@ on load:
 function tinyText(text: text) :: text:
 	loop {-tiny::*}:
 		replace {-lower::%loop-index%} and {-upper::%loop-index%} with loop-value in {_text}
+		# puts back color codes
+		replace "§%loop-value%" with "§%{-lower::%loop-index%}%" in {_text}
 	return {_text}
 
 #! Example Usages !#
