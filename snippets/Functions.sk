@@ -1,0 +1,34 @@
+# Functions
+# By: Shane Bee
+
+# This is a set of random functions for you to use
+
+# Round a timespam (generally will round the seconds)
+function roundTimespan(t: timespan) :: timespan:
+	set {_a::*} to "%{_t}%" split at " "
+	loop {_a::*}:
+		set {_n} to loop-value parsed as a number
+		if {_n} is set:
+			set {_a::%loop-index%} to "%round({_n})%"
+	set {_a} to join {_a::*} using " "
+	return {_a} parsed as timespan
+
+# Round a timespam down (generally will round the seconds)
+function floorTimespan(t: timespan) :: timespan:
+	set {_a::*} to "%{_t}%" split at " "
+	loop {_a::*}:
+		set {_n} to loop-value parsed as a number
+		if {_n} is set:
+			set {_a::%loop-index%} to "%floor({_n})%"
+	set {_a} to join {_a::*} using " "
+	return {_a} parsed as timespan
+
+# Round a timespam up (generally will round the seconds)
+function ceilTimespan(t: timespan) :: timespan:
+	set {_a::*} to "%{_t}%" split at " "
+	loop {_a::*}:
+		set {_n} to loop-value parsed as a number
+		if {_n} is set:
+			set {_a::%loop-index%} to "%ceil({_n})%"
+	set {_a} to join {_a::*} using " "
+	return {_a} parsed as timespan
