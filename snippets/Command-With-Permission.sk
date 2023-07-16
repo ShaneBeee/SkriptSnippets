@@ -1,0 +1,25 @@
+# Run Command With Permission
+# By: ShaneBee
+
+# This little snippet creates a custom effect which allows you to make a player
+# run a command they dont have perm for, by temporarily giving them perms
+
+on load:
+	set {-skript} to server.getServer().getPluginManager().getPlugin("Skript")
+
+#! CUSTOM EFFECT !#
+# Temporarily give a player permission to run a command
+effect execute %player% command %string% with permission %string%:
+	trigger:
+		set {_p} to expr-1
+		set {_perm} to expr-3
+		{_p}.addAttachment({-skript}, {_perm}, true, 1)
+		execute {_p} command expr-2
+
+# Example usage
+command /test:
+	trigger:
+		if gamemode of player = survival:
+			execute player command "/gamemode creative" with permission "minecraft.command.gamemode"
+		else:
+			execute player command "/gamemode survival" with permission "minecraft.command.gamemode"
