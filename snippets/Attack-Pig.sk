@@ -5,30 +5,27 @@
 
 # REQUIRES: SkBee
 
-#! FUNCTIONS !#
+#! FUNCTION !#
 # Spawn a new attack pig
 function spawnAttackPig(l: location):
 	spawn a pig at {_l}:
 		set tag "custom;attackPig" of nbt of entity to true
 		set name of entity to "&cAttack Pig"
-	set {_e} to last spawned pig
-	attackPig({_e})
 
-# Activate attack pig when entity is loaded into the server
-function attackPig(e: entity):
-	while {_e} is alive:
-		set {_p} to nearest player in radius 15 around {_e}
-		if gamemode of {_p} = survival or adventure:
-			set path target of {_e} to {_p}
-			if distance between {_e} and {_p} < 1:
-				make {_e} damage {_p} by 1
-		wait 5 ticks
-
-# Checks when entity is loaded and re-enables attack status
+#! LISTENER !#
+# Checks when entity is loaded and enables attack status
 on entity added to world:
-	if event-entity is a pig:
-		if nbt of event-entity has tag "custom;attackPig":
-			attackPig(event-entity)
+	wait 1 tick
+	set {_e} to event-entity
+	if type of {_e} = pig:
+		if nbt of {_e} has tag "custom;attackPig":
+			while {_e} is alive:
+				set {_p} to nearest player in radius 15 around {_e}
+				if gamemode of {_p} = survival or adventure:
+					set path target of {_e} to {_p}
+					if distance between {_e} and {_p} < 1:
+						make {_e} damage {_p} by 1
+				wait 5 ticks
 
 #! COMMAND !#
 # Spawn an attack pig
