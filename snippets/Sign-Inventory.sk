@@ -1,0 +1,52 @@
+# Sign Inventory
+# By: ShaneBee
+
+# Requirements: SkBee
+
+on sign change:
+	loop 4 times:
+		set line loop-number of event-block to colored line loop-number of event-block
+	if line 1 of event-block = "&bInventory":
+		set line 2 of event-block to "&7Items: &a0"
+
+on right click on sign:
+	if line 1 of event-block = "&bInventory":
+		cancel event
+		if tag "custom;Viewer" of nbt of event-block is not set:
+			set uuid tag "custom;Viewer" of nbt of event-block to player
+			set {_g} to hopper inventory named "&bSign Inventory"
+			set {_i::*} to compound list tag "custom;Inventory" of nbt of event-block
+			loop {_i::*}:
+				set {_s} to byte tag "Slot" of loop-value
+				set {_i} to nbt item from loop-value
+				set slot {_s} of {_g} to {_i}
+			open {_g} to player
+			set metadata tag "sign-inv" of player to event-block
+		else:
+			set {_view} to (uuid tag "custom;Viewer" of nbt of event-block) parsed as player
+			send "&b%{_view}% &cis viewing this inventory"
+
+
+on inventory close:
+	if metadata tag "sign-inv" of player is set:
+		set {_block} to metadata tag "sign-inv" of player
+		delete metadata tag "sign-inv" of player
+		set {_size} to 0
+		loop items in current inventory of player:
+			add (item amount of loop-value) to {_size}
+			set {_n} to full nbt of loop-value
+			set byte tag "Slot" of {_n} to index of loop-value
+			add {_n} to {_i::*}
+		set compound list tag "custom;Inventory" of nbt of {_block} to {_i::*}
+		delete uuid tag "custom;Viewer" of nbt of {_block}
+		set line 2 of {_block} to "&7Items: &a%{_size}%"
+
+on break of sign:
+	if nbt of event-block has tag "custom;Viewer":
+		cancel event
+		set {_view} to (uuid tag "custom;Viewer" of nbt of event-block) parsed as player
+		send "&b%{_view}% &cis viewing this inventory"
+	if nbt of event-block has tag "custom;Inventory":
+		loop compound list tag "custom;Inventory" of nbt of event-block:
+			set {_i} to nbt item from loop-value
+			drop {_i} at event-block
