@@ -1,12 +1,20 @@
-#! A fun little script to visualize entities pathfinding !#
+# Pathfinder
+# By: ShaneBee
 
+# A fun little script to visualize entity pathfinding
+
+# Requires: SkBee
+
+#! FUNCTIONS !#
+# Draw a line
 function draw(l1: location, l2: location, c: color):
 	set {_v} to vector between {_l1} and {_l2}
 	set {_d} to distance between {_l1} and {_l2}
 	loop ({_d} / 0.2) times:
 		set vector length of {_v} to (loop-value * 0.2)
-		draw 1 of dust using dustOption({_c}, 0.8) at {_l1} ~ {_v}
+		draw 1 of dust using dustOption({_c}, 0.8) at {_l1} ~ {_v} with force
 
+# Pathfind an entity
 function path(e: entity):
 	while path points of {_e} is set:
 		delete {_l1}
@@ -29,19 +37,24 @@ function path(e: entity):
 			stop
 		wait 5 ticks
 
+#! EVENT LISTENER !#
 on entity starts pathfinding:
 	if {-path} is not set:
 		stop
 	set {_e} to event-entity
 	if type of {_e} != {-path}:
 		stop
-	
+
 	wait 1 tick
 	path({_e})
 
+#! COMMAND !#
 command /path [<string="disable">]:
 	trigger:
-		if {-path} is not set:
+		if arg-1 = "disable":
+			delete {-path}
+			send "&7[&bPath&3Finder&7] &cDisabled"
+		else:
 			set {_e} to arg-1
 			replace "_" with " " in {_e}
 			set {_e} to {_e} parsed as entity type
@@ -50,11 +63,8 @@ command /path [<string="disable">]:
 				stop
 			set {-path} to {_e}
 			send "&7[&bPath&3Finder&7] &aEnabled for &b%{_e}%"
-		else:
-			delete {-path}
-			send "&7[&bPath&3Finder&7] &cDisabled"
 
-
+# set available entity types as strings for tab complete
 on load:
 	delete {-etypes::*}
 	loop all available entity types:
@@ -65,4 +75,3 @@ on load:
 
 on tab complete of "/path":
 	set tab completions for position 1 to {-etypes::*}
- 
