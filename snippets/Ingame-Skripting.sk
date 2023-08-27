@@ -1,0 +1,58 @@
+# InGame Skripting
+# By: ShaneBee
+
+# Requires: Skript-Reflect
+
+# This little script allows you to create/edit scripts in game
+
+import:
+	java.io.File
+	java.io.FileWriter
+	ch.njol.skript.ScriptLoader
+	ch.njol.skript.log.RedirectingLogHandler
+	org.bukkit.event.player.PlayerEditBookEvent
+
+# create the bookfile (this is where the script is actually saved)
+# its recommended to have RAM variables setup for this
+on load:
+	set {-bookfile} to new File("plugins/Skript/scripts/bookcode.sk")
+
+on unload:
+	# failsafe incase you dont have RAM vars setup
+	delete {-bookfile}
+
+# Command to give yourself the book
+command /bookskript:
+	trigger:
+		give player a writable book named "&bBook&3Skript"
+
+# Using Bukkit event instead of having to deal with Skript's 2 different events
+on PlayerEditBookEvent:
+	set {_player} to event.getPlayer()
+	set {_book} to tool of {_player}
+	if {_book} != writable book named "&bBook&3Skript":
+		stop
+	{_book}.setItemMeta(event.getNewBookMeta())
+
+	set {_page} to join pages of {_book} by nl
+	if event.isSigning():
+		cancel event
+
+	if {_page} is not set:
+		set {_page} to nl
+
+	set {_writer} to new FileWriter({-bookfile})
+	{_writer}.write("##! Written in game by %{_player}% !##%nl%%nl%")
+	{_writer}.write({_page})
+	{_writer}.close()
+
+	set {_logger} to new RedirectingLogHandler({_player}, "&7[&bBook&3Skript&7] ").start()
+	set {_n} to (unix timestamp of now * 1000)
+	ScriptLoader.reloadScript({-bookfile}, {_logger})
+	set {_f} to (unix timestamp of now * 1000) - {_n}
+	set {_errors} to {_logger}.numErrors()
+	set {_e} to "errors" if {_errors} > 1 else "error"
+	if {_errors} > 0:
+		send "&7[&bBook&3Skript&7] &cEncountered &6%{_errors}%&c %{_e}% while reloading &6bookcode &7(&6%{_f}%ms&7)" to {_player}
+	else:
+		send "&7[&bBook&3Skript&7] &aSuccessfully reloaded &6bookcode &7(&6%{_f}%ms&7)" to {_player}
