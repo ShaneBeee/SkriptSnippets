@@ -25,8 +25,8 @@ command /ministructure <structure:string> <scale:number=1>:
 		set {_s} to structure named {_structure}
 		set {_loc} to location of target block ~ vector(-0.5,0.5,-0.5)
 		loop blockstates of structure {_s}:
-			set {_data} to block data of blockstate loop-value
-			set {_off} to offset of blockstate loop-value
+			set {_data} to blockstate blockdata of loop-value
+			set {_off} to blockstate offset of loop-value
 			set x component of {_off} to x component of {_off} * {_scale}
 			set y component of {_off} to y component of {_off} * {_scale}
 			set z component of {_off} to z component of {_off} * {_scale}
