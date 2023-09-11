@@ -1,0 +1,37 @@
+# Simple Vanilla Gui Example
+# By: ShaneBee
+
+# This showcases how to create a simple GUI in Skript without any addons.
+# While this may work for most people, Skript has a few flags that can cause issues
+# I personally prefer Skript-GUI as it is simpler/cleaner to write/use.
+
+command /spawn:
+	trigger:
+		# create our custom inventory
+		set {_g} to chest inventory with 1 row named "&bSpawns"
+
+		# fill all empty slots with glass
+		set slots (integers between 0 and 8) of {_g} to black stained glass pane named " "
+
+		# set our slots that will have actions
+		set slot 0 of {_g} to grass named "&aWorld Spawn"
+		set slot 1 of {_g} to netherrack named "&cNether Spawn"
+
+		# store the gui in the player for click events
+		set metadata tag "my-gui" of player to {_g}
+
+		# open the gui to the player
+		open {_g} to player
+
+on inventory click:
+	# verify the inventory the player is clicking is our GUI
+	if clicked inventory = metadata tag "my-gui" of player:
+		# stop them from stealing
+		cancel event
+
+		# check the slot they're clicking
+		if index of clicked slot = 0:
+			# run an action
+			teleport player to spawn of world "world"
+		else if index of clicked slot = 1:
+			teleport player to spawn of world "world_nether"
