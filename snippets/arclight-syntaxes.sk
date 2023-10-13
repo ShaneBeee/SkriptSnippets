@@ -1,0 +1,47 @@
+# Arclight Syntaxes
+# By: ShaneBee
+
+# This little snippet allows for some useful syntaxes on an Arclight server
+
+# REQUIRES: SkBee and skript-reflect
+
+import:
+	org.bukkit.entity.EntityType
+	ch.njol.skript.sections.EffSecSpawn
+
+#! SPAWN A MODDED MOB !#
+# This effect allows you to spawn a modded mob
+# supports `last spawned entity`
+# EXAMPLE -> `mod spawn "tfc:turkey" at player`
+
+effect mod spawn %string% at %location%:
+	trigger:
+		set {_t} to uppercase expr-1
+		replace ":" with "_" in {_t}
+		set {_e} to EntityType.valueOf({_t})
+		if {_e} is not set:
+			stop
+		set {_loc} to expr-2
+		set {_w} to world of {_loc}
+		set EffSecSpawn.lastSpawned to {_w}.spawnEntity({_loc}, {_e})
+
+#! MODDED BLOCK DATA !#
+# This effect allows you to set a block to a modded blockdata
+# EXAMPLE -> `mod set target block to "tfc:clay/silt"`
+
+effect mod set %block% to %string%:
+	trigger:
+		set {_data} to server.getServer().createBlockData(expr-2)
+		if {_data} is set:
+			set block at expr-1 to {_data}
+
+#! MODDED ITEMTYPE !#
+# This expression returns an itemtype from a mod
+# EXAMPLE -> `give player mod item from "tfc:wild_crop/oat"`
+
+expression mod item[[ ]type] from %string%:
+	get:
+		set {_i::*} to expr-1 split at ":"
+		set {_i::1} to "minecraft:%{_i::1}%_"
+		set {_i} to join {_i::*}
+		return itemtype from namespacedkey from {_i}
