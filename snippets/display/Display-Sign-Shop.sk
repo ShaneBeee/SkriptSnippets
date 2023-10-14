@@ -1,0 +1,74 @@
+# Sign Shop
+# By: ShaneBee
+
+# This little snippet gives an example of how to use text displays for sign shops
+
+# REQUIRES: SkBee, MC 1.19.4+
+
+function setPrice(item: string, buy: number, sell: number):
+	set {-prices::%{_item}%::buy} to {_buy}
+	set {-prices::%{_item}%::sell} to {_sell}
+
+# Setup the prices for the shop
+on load:
+	setPrice("stone", 5, 2)
+	setPrice("diamond", 100, 75)
+	setPrice("diamond sword", 150, 0)
+	setPrice("emerald", 500, 200)
+
+function getText(p: string) :: string:
+	set {_t::1} to "&b&l&nShopThingy&r"
+	set {_t::2} to "&7Product: <##38F5A7>%{_p}%"
+	set {_buy} to {-prices::%{_p}%::buy} ? 0
+	set {_t::3} to "&7Buy: &e$&c%{_buy}%"
+	set {_sell} to {-prices::%{_p}%::sell} ? 0
+	set {_t::4} to "&7Sell: &e$&a%{_sell}%"
+	return (join {_t::*} using nl)
+
+function spawnText(p: string, l: location) :: entities:
+	spawn a text display at {_l}:
+		set display text of entity to getText({_p})
+		set display translation of entity to vector(0,0.3,-0.4)
+		set display text background color of entity to bukkitColor(100,0,0,0)
+	set {_e::1} to last spawned entity
+	spawn a text display at {_l}:
+		set display text of entity to getText({_p})
+		set display translation of entity to vector(0,0.29,-0.41)
+		set display scale of entity to vector(1.02,1.02,1)
+		set display text background color of entity to bukkitColor(100,255,122,240)
+	set {_e::2} to last spawned entity
+
+	set {-e::%{_l}%::*} to {_e::*}
+	set display scale of {_e::*} to vector(0,0,0)
+	wait 1 tick
+	set interpolation duration of {_e::*} to 5
+	set interpolation start of {_e::*} to -1
+	wait 1 tick
+	set display scale of {_e::1} to vector(1,1,1)
+	set display scale of {_e::2} to vector(1.02,1.02,1)
+
+function manageSign(p: player):
+	if {-target::%{_p}%} is not set:
+		set {-target::%{_p}%} to exact target block of {_p}
+		set {_loc} to location of {-target::%{_p}%}
+		set {_line} to line 2 of {-target::%{_p}%}
+
+		spawnText({_line}, {_loc})
+		while exact target block of {_p} = {-target::%{_p}%}:
+			wait 1 tick
+		delete {-target::%{_p}%}
+
+		set {_e::*} to {-e::%{_loc}%::*}
+		set interpolation duration of {_e::*} to 5
+		set interpolation start of {_e::*} to -1
+		set display scale of {_e::*} to vector(0,0,0)
+		wait 5 ticks
+		kill {_e::*}
+
+on join:
+	while player is connected:
+		if exact target block of player is any wall sign:
+			if distance between player and exact target block < 7:
+				if {-target::%player%} is not set:
+					manageSign(player)
+		wait 1 tick
