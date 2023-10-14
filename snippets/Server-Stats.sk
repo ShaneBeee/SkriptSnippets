@@ -5,21 +5,8 @@
 # IT IS NOT EFFICIENT AT ALL
 # USE WITH CAUTION
 
-import:
-	org.bukkit.entity.Enemy
-	org.bukkit.entity.Display
-
-function getMonsters() :: entities:
-	loop all entities:
-		if loop-entity is instance of Enemy:
-			add loop-entity to {_e::*}
-	return {_e::*}
-
-function getDisplayEntities() :: entities:
-	loop all entities:
-		if loop-entity is instance of Display:
-			add loop-entity to {_e::*}
-	return {_e::*}
+# Requirements: SkBee, skript-reflect, MC 1.20+, Skript 2.7+
+# Optional: NMS-API (for custom biome support in biome bar, can be found at `https://github.com/ShaneBeee/NMS-API`)
 
 function updateChunks():
 	wait 1 tick
@@ -28,24 +15,23 @@ function updateChunks():
 
 on load:
 	set {-grad} to -1
+	set {-srv} to server.getServer()
 	updateChunks()
 
 every tick:
-	set {-at} to server.getServer().getAverageTickTime()
+	set {-at} to {-srv}.getAverageTickTime()
 	if {-at} > 15:
 		set {-lagging} to true
 	else if {-at} < 8:
 		set {-lagging} to false
-	if {-at} < 10:
-		set {-tick} to "&a%{-at}%"
-	else if {-at} < 20:
-		set {-tick} to "<##F5DF07>%{-at}%"
-	else if {-at} < 40:
-		set {-tick} to "<##F49822>%{-at}%"
-	else if {-at} < 50:
-		set {-tick} to "&c%{-at}%"
-	else:
-		set {-tick} to "&4%{-at}%"
+
+	set {_p} to {-at}
+	if {_p} > 40:
+		set {_p} to 40
+	set {_p} to {_p} / 40
+
+	set {_m} to mini message from "<transition:##17FA04:##F3FA04:##FA7804:##FA1704:%{_p}%>%{-at}%"
+	set {-tick} to {_m} #this stupidness is to prevent "you cant save a mini message" warning
 
 	add 0.025 to {-grad}
 	if {-grad} > 1:
@@ -80,12 +66,12 @@ function updateBoard(p: player):
 		set title of {_p}'s scoreboard to {_m}
 		set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-cw}%"
 		set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-cn}%"
-		set line 11 of {_p}'s scoreboard to "&7- <##11D875>%{-tick}%&7ms"
+		set line 11 of {_p}'s scoreboard to "&7- %{-tick}%&7ms"
 		set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
 		set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%size of all entities where [input is ticking]%&7/<##11D875>%size of all entities%"
 		set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%size of all mobs where [input is ticking]%&7/<##11D875>%size of all mobs%"
-		set line 5 of {_p}'s scoreboard to "&7- &bMonsters: <##11D875>%size of getMonsters() where [input is ticking]%&7/<##11D875>%size of getMonsters()%"
-		set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%size of getDisplayEntities() where [input is ticking]%&7/<##11D875>%size of getDisplayEntities()%"
+		set line 5 of {_p}'s scoreboard to "&7- &bMonsters: <##11D875>%size of all enemies where [input is ticking]%&7/<##11D875>%size of all enemies%"
+		set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%size of all displays where [input is ticking]%&7/<##11D875>%size of all displays%"
 		set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%size of all villagers where [input is ticking]%&7/<##11D875>%size of all villagers%"
 		set {_f} to size of all entities where ["%input%" contains "falling"]
 		set {_ft} to size of (all entities where ["%input%" contains "falling"]) where [input is ticking]
@@ -100,11 +86,86 @@ on unload:
 	delete {-boards}
 
 on load:
+	set {-biomebar} to true
 	wait 2 ticks
 	set {-boards} to true
 	loop all players:
 		updateBoard(loop-player)
 
-command /stats:
+command /stats [<text>]:
 	trigger:
-		toggle scoreboard of player
+		if arg-1 = "sidebar":
+			toggle scoreboard of player
+		else if arg-1 = "rambar":
+			ramBar()
+		else if arg-1 = "biomebar":
+			if {-biomebar} is not set:
+				set {-biomebar} to true
+			else:
+				delete {-biomebar}
+				send action bar "" to player
+		else:
+			send "&7[&bStats&7] &cInvalid option &r'&7/stats <biomebar|sidebar>&r'"
+
+on tab complete of "/stats":
+	set tab completions for position 1 to "sidebar", "rambar" and "biomebar"
+
+#! SHOW BIOME BAR !#
+# NMS-API adds the ability to see custom biomes (from datapacks)
+# Without said API, you will only see vanilla biomes
+
+on load:
+	parse if class "com.shanebeestudios.nms.api.world.WorldApi" exists:
+		set {-worldapi} to class "com.shanebeestudios.nms.api.world.WorldApi"
+
+every tick:
+	if {-biomebar} is set:
+		loop all players:
+			if {-worldapi} is set:
+				set {_b} to {-worldapi}.getBiome(location of loop-player)
+			else:
+				set {_b} to namespaced key of biome at loop-player
+			set {_b} to "%{_b}%"
+			replace "minecraft:" with "&bminecraft&r:&e" in {_b}
+			replace "wythers:" with "&awythers&r:&e" in {_b}
+			replace "skbee:" with "<##FFA533>skbee&r:&e" in {_b}
+			replace "terralith:" with "<##D01ED8>terralith&r:&e" in {_b}
+			send action bar "&7Biome: %{_b}%" to loop-player
+
+#! RAM BAR !#
+import:
+	java.lang.Runtime
+
+on load:
+	if {-bar} is not set:
+		ramBar()
+
+on unload:
+	delete bossbar with id "ram"
+	delete {-bar}
+
+on join:
+	add player to {-bar}
+
+function ramBar():
+	if {-bar} is not set:
+		set {_run} to Runtime.getRuntime()
+		set {_max} to {_run}.maxMemory() / 1024 / 1024
+		set {-bar} to boss bar with id "ram" with title "FILL IN" with color blue with style solid_bar
+		add all players to {-bar}
+		while {-bar} is set:
+			set {_free} to {_run}.freeMemory() / 1024 / 1024
+			set {_used} to {_max} - {_free}
+			set bar title of {-bar} to "&7Ram: &b%{_used}%&7mb / &b%{_max}%&7mb"
+			set {_pro} to ({_used} / {_max}) * 100
+			set bar progress of {-bar} to {_pro}
+			if {_pro} > 90:
+				set bar color of {-bar} to red
+			else if {_pro} > 75:
+				set bar color of {-bar} to yellow
+			else:
+				set bar color of {-bar} to green
+			wait 10 ticks
+	else:
+		delete boss bar with id "ram"
+		delete {-bar}
