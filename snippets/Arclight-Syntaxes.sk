@@ -12,36 +12,38 @@ import:
 #! SPAWN A MODDED MOB !#
 # This effect allows you to spawn a modded mob
 # supports `last spawned entity`
-# EXAMPLE -> `mod spawn "tfc:turkey" at player`
+# EXAMPLES:
+# `mod spawn mod_name:mod_entity at location(1,1,1)`
+# `mod spawn tfc:turkey at player`
 
-effect mod spawn %string% at %location%:
+effect mod[ded] spawn <(.+)> at %location%:
 	trigger:
-		set {_t} to uppercase expr-1
+		set {_t} to uppercase "%regex-1%"
 		replace ":" with "_" in {_t}
 		set {_e} to EntityType.valueOf({_t})
 		if {_e} is not set:
 			stop
-		set {_loc} to expr-2
+		set {_loc} to expr-1
 		set {_w} to world of {_loc}
 		set EffSecSpawn.lastSpawned to {_w}.spawnEntity({_loc}, {_e})
 
-#! MODDED BLOCK DATA !#
+#! MODDED BLOCKDATA !#
 # This effect allows you to set a block to a modded blockdata
-# EXAMPLE -> `mod set target block to "tfc:clay/silt"`
+# EXAMPLE -> `mod set target block to tfc:clay/silt`
 
-effect mod set %block% to %string%:
+effect mod[ded] set [block data of] %block% to <(.+)>:
 	trigger:
-		set {_data} to server.getServer().createBlockData(expr-2)
+		set {_data} to server.getServer().createBlockData("%regex-1%")
 		if {_data} is set:
 			set block at expr-1 to {_data}
 
 #! MODDED ITEMTYPE !#
 # This expression returns an itemtype from a mod
-# EXAMPLE -> `give player mod item from "tfc:wild_crop/oat"`
+# EXAMPLE -> `give player mod item tfc:wild_crop/oat`
 
-expression mod item[[ ]type] from %string%:
+expression mod[ded] item[[ ]type] [from] <(.+)>:
 	get:
-		set {_i::*} to expr-1 split at ":"
+		set {_i::*} to "%regex-1%" split at ":"
 		set {_i::1} to "minecraft:%{_i::1}%_"
 		set {_i} to join {_i::*}
 		return itemtype from namespacedkey from {_i}
