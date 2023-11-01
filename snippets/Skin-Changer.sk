@@ -1,0 +1,30 @@
+# Simple Skin Changer
+# By: ShaneBee
+
+# This little snippet allows you to change a player's skin
+
+# Requires: Skript-Reflect and Paper (I should hope you already have Paper)
+
+
+#! CUSTOM EFFECT !#
+# Player = the player who's skin is going to change
+# String = the name of the player to grab a skin from
+effect set skin of %player% to %string%:
+	trigger:
+		set {_p} to expr-1
+		set {_n} to expr-2
+
+		create new section with {_name}, {_player} stored in {_sec}:
+			set {_pro} to server.getServer().createProfile({_name})
+			{_pro}.complete(true)
+			set {_text} to {_pro}.getTextures()
+			set {_pro} to {_player}.getPlayerProfile()
+			{_pro}.setTextures({_text})
+			return {_pro}
+		run section {_sec} async with arguments {_n} and {_p} and store result in {_pro} and wait
+		{_p}.setPlayerProfile({_pro})
+
+#! EXAMPLE USAGE !#
+command /setskin <name:string>:
+	trigger:
+		set skin of player to {_name}
