@@ -70,7 +70,7 @@ function updateBoard(p: player):
 		set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
 		set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%size of all entities where [input is ticking]%&7/<##11D875>%size of all entities%"
 		set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%size of all mobs where [input is ticking]%&7/<##11D875>%size of all mobs%"
-		set line 5 of {_p}'s scoreboard to "&7- &bMonsters: <##11D875>%size of all enemies where [input is ticking]%&7/<##11D875>%size of all enemies%"
+		set line 5 of {_p}'s scoreboard to "&7- &bEnemies: <##11D875>%size of all enemies where [input is ticking]%&7/<##11D875>%size of all enemies%"
 		set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%size of all displays where [input is ticking]%&7/<##11D875>%size of all displays%"
 		set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%size of all villagers where [input is ticking]%&7/<##11D875>%size of all villagers%"
 		set {_f} to size of all entities where ["%input%" contains "falling"]
@@ -121,6 +121,8 @@ on load:
 every tick:
 	if {-biomebar} is set:
 		loop all players:
+			if loop-player's tool is a debug stick:
+				continue
 			if {-worldapi} is set:
 				set {_b} to {-worldapi}.getBiome(location of loop-player)
 			else:
