@@ -1,0 +1,76 @@
+# Resource Pack
+# By: ShaneBee
+
+# This little snippet allows you to send multiple resource packs, remove packs and clear all packs
+# Some of this can be done on Spigot, but Paper went and broke the setResourcePack method... good job Paper
+
+# Requires: Skript-Reflect, Minecraft 1.20.3+
+
+import:
+	java.util.UUID
+	net.minecraft.network.protocol.common.ClientboundResourcePackPopPacket
+	net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket
+	org.bukkit.craftbukkit.v1_20_R3.util.CraftChatMessage
+	java.util.Optional
+
+#! SEND A RESOURCE PACK !#
+# Send a resource pack to a player
+
+# Player = The player to send to
+# uuid = A unique ID for the pack
+# url = The url pointing towards your pack
+# msg = Message to show to client when prompting pack
+# force = Whether or not to force the client to download the pack
+function sendPack(p: player, uuid: string, url: string, msg: string, force: boolean):
+	set {_u} to UUID.fromString({_uuid})
+	set {_packet} to new ClientboundResourcePackPushPacket({_u}, {_url}, "", {_force}, CraftChatMessage.fromStringOrNull({_msg}, true))
+	{_p}.getHandle().c.b({_packet})
+
+#! REMOVE A RESOURCE PACK !#
+# Remove a resource pack from a player
+
+# Player = The player to remove a pack from
+# uuid = A unique ID for the pack
+function removePack(p: player, uuid: string):
+	set {_u} to UUID.fromString({_uuid})
+	set {_packet} to new ClientboundResourcePackPopPacket(Optional.of({_u}))
+	player.getHandle().c.b({_p})
+
+#! CLEAR RESOURCE PACKS !#
+# Will clear all server packs the player currently has
+
+# Player = The player to clear packs
+function clearPacks(p: player):
+	set {_packet} to new ClientboundResourcePackPopPacket(Optional.empty())
+	player.getHandle().c.b({_p})
+
+#! EXAMPLES !#
+# Example when joining
+on join:
+	set {_u} to "1748129a-525b-44eb-8fb5-8953d0287508"
+	set {_url} to raw "https://www.dropbox.com/scl/fi/wd89suog92c8tbdjvp6qy/Faithful-32x-1.20.2.zip?rlkey=9sn4w6d1oa8y4d5k1wqm6dwrg&dl=1"
+	sendPack(player, {_u}, {_url}, "Testing Faithful", true)
+
+	set {_u} to "1748129a-525b-44eb-8fb5-8953d0287509"
+	set {_url} to raw "https://www.dropbox.com/scl/fi/mxlzwr339jg0kji65g8tg/Default-Dark-Mode-1.20.2-2023.9.0.zip?rlkey=nl1ygihkei47jjhkorjmg01fr&dl=1"
+	sendPack(player, {_u}, {_url}, "&cYou have to accept... Muah HAHA!", true)
+
+# Example add/remove command
+command /pack <string>:
+	trigger:
+		if arg-1 = "add":
+			set {_u} to "1748129a-525b-44eb-8fb5-8953d0287508"
+			set {_url} to raw "https://www.dropbox.com/scl/fi/wd89suog92c8tbdjvp6qy/Faithful-32x-1.20.2.zip?rlkey=9sn4w6d1oa8y4d5k1wqm6dwrg&dl=1"
+			sendPack(player, {_u}, {_url}, "Testing Faithful", false)
+
+			set {_u} to "1748129a-525b-44eb-8fb5-8953d0287509"
+			set {_url} to raw "https://www.dropbox.com/scl/fi/mxlzwr339jg0kji65g8tg/Default-Dark-Mode-1.20.2-2023.9.0.zip?rlkey=nl1ygihkei47jjhkorjmg01fr&dl=1"
+			sendPack(player, {_u}, {_url}, "Testing Dark Mode", false)
+
+		else if arg-1 = "remove":
+			set {_p} to new ClientboundResourcePackPopPacket(Optional.empty())
+			player.getHandle().c.b({_p})
+
+on tab complete of "pack":
+	set tab completions for position 1 to "add" and "remove"
+
