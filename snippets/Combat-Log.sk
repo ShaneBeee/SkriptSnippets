@@ -11,24 +11,24 @@ options:
 	prefix: &7[&bCombat&7]
 
 function combatTimer(p: player):
-	if {combat::%uuid of {_p}%} is not set:
-		set {combat::%uuid of {_p}%} to {@combat_time} from now
-		while {combat::%uuid of {_p}%} is set:
-			if {combat::%uuid of {_p}%} > now:
-				set {_diff} to (seconds of (difference between {combat::%uuid of {_p}%} and now)) + 1
+	if {-combat::%uuid of {_p}%} is not set:
+		set {-combat::%uuid of {_p}%} to {@combat_time} from now
+		while {-combat::%uuid of {_p}%} is set:
+			if {-combat::%uuid of {_p}%} > now:
+				set {_diff} to (seconds of (difference between {-combat::%uuid of {_p}%} and now)) + 1
 				send action bar "{@prefix} &cYou're in combat for %{_diff}% seconds!" to {_p}
 			else:
-				delete {combat::%uuid of {_p}%}
+				delete {-combat::%uuid of {_p}%}
 			wait 5 ticks
 		send action bar "{@prefix} &aYou're out of combat!" to {_p}
 	else:
-		set {combat::%uuid of {_p}%} to {@combat_time} from now
+		set {-combat::%uuid of {_p}%} to {@combat_time} from now
 
 function checkCombat(p: player) :: boolean:
-	if {combat::%uuid of {_p}%} > now:
+	if {-combat::%uuid of {_p}%} > now:
 		return true
 	else:
-		delete {combat::%uuid of {_p}%}
+		delete {-combat::%uuid of {_p}%}
 		return false
 
 # Activate the combat timer
@@ -48,3 +48,4 @@ on break:
 on quit:
 	if checkCombat(player) = true:
 		kill player
+	delete {-combat::%uuid of player%}
