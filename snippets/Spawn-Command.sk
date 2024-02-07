@@ -5,19 +5,19 @@
 # Requirements: None
 
 command /spawn:
-	trigger:
-		# Set a var to where the player runs the command
-		set {_l} to location of player
+    trigger:
+        # Set a var to where the player runs the command
+        set {_l} to location of player
 
-		# loop however many times you wanna delay this for in seconds
-		loop reversed 5 times:
-			send "Teleporting in %loop-number% seconds"
-			wait 1 second
+        # loop however many times you wanna delay this for in seconds
+        loop reversed 5 times:
+            send "Teleporting in %loop-number% seconds"
+            wait 1 second
 
-			# Check if the player moved, if so, stop the command
-			if distance between player and {_l} > 0.1:
-				send "OOPS you moved, try again!!!"
-				stop
+            # Check if the player moved, if so, stop the command
+            if distance between player and {_l} > 0.1:
+                send "OOPS you moved, try again!!!"
+                stop
 
-		# If the player stood still, they get teleported
-		teleport player to spawn of world "world"
+        # If the player stood still, they get teleported
+        teleport player to spawn of world "world"
