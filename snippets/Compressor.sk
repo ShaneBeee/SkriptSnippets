@@ -1,0 +1,35 @@
+# Compressor
+# By: ShaneBee
+
+# This little snippets shows how to register simple compressors
+
+# REQUIRES: SkBee (for hiding flags on items)
+
+# Function to register your compressor
+# From = The item to compress
+# To = The item that will be compressed into
+# Required = The amount of 'From' that will be required to compress
+function registerCompressor(from: itemtype, to: itemtype, required: number):
+	set {-comp::%{_from}%::to} to {_to}
+	set {-comp::%{_from}%::required} to {_required}
+
+# Function to run when compression needs to happen
+function compress(p: player, from: itemtype):
+	set {_required} to 1 of {-comp::%{_from}%::required}
+	set {_give} to {-comp::%{_from}%::to}
+	if {_required} is set:
+		while {_p} has {_required} of plain {_from}:
+			remove {_required} of plain {_from} from {_p}
+			give {_give} to {_p}
+
+# Register your compressors
+on load:
+	set {_i} to cobblestone of unbreaking named "&bCompressed Cobble" with all flags hidden
+	registerCompressor(1 of cobblestone, {_i}, 64)
+	set {_i} to diamond of unbreaking named "&aCompressed Diamond" with all flags hidden
+	registerCompressor(1 of diamond, {_i}, 64)
+
+# Run the compressor function when a player picks up an item
+on pickup:
+	wait 1 tick
+	compress(player, event-item)
