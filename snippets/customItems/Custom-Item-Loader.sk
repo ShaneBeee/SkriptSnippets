@@ -1,0 +1,66 @@
+# Custom Item Creator
+# By: ShaneBee
+
+# This little script loads custom items from a config, and registers recipes along side them
+
+# REQUIREMENTS: SkBee, Skript-Yaml
+
+options:
+	# This is where your yaml file will be
+	file_path: plugins/Test/test.yml
+
+	# This is the variable your items will be saved in
+	# This example = `{-customItems::some_item}`
+	item_variable: -customItems
+
+on load:
+	load yaml "{@file_path}" as "custom_item_yaml"
+	loop yaml node keys "items.custom" of "custom_item_yaml":
+		loadItem(loop-value)
+
+function getItemFromKey(key: string) :: itemtype:
+	set {_s::*} to {_key} split at ":"
+	if {_s::1} = "minecraft":
+		return itemtype from key (namespaced key of {_key})
+	else:
+		return {{@item_variable}::%{_s::2}%}
+
+function getEnchantFromKey(key: string) :: enchantment:
+	return enchantment from key (namespaced key of {_key})
+
+function loadItem(key: string):
+	#! Create Item !#
+	set {_name} to yaml value "items.custom.%{_key}%.name" of "custom_item_yaml"
+	set {_type} to getItemFromKey(yaml value "items.custom.%{_key}%.type" of "custom_item_yaml")
+	set {_amount} to yaml value "items.custom.%{_key}%.amount" of "custom_item_yaml"
+	set {_lore::*} to yaml list "items.custom.%{_key}%.lore" of "custom_item_yaml"
+	set {_i} to {_amount} of {_type} named {_name} with lore colored {_lore::*}
+	set {_nbt} to nbt from (yaml value "items.custom.%{_key}%.nbt" of "custom_item_yaml")
+	add {_nbt} to nbt of {_i}
+
+	#! Enchant Item !#
+	loop yaml list "items.custom.%{_key}%.enchantments" of "custom_item_yaml":
+		set {_s::*} to loop-value split at "="
+		set {_e} to getEnchantFromKey({_s::1})
+		set {_l} to {_s::2} parsed as number
+		set enchantment level of {_e} of {_i} to {_l}
+
+	#! Save Item To Var !#
+	set {{@item_variable}::%{_key}%} to {_i}
+
+	#! Create Recipe Parts !#
+	set {_shape::*} to yaml list "items.custom.%{_key}%.recipe.shape" of "custom_item_yaml"
+	set {_group} to yaml value "items.custom.%{_key}%.recipe.group" of "custom_item_yaml"
+	loop yaml node keys "items.custom.%{_key}%.recipe.ingredients" of "custom_item_yaml":
+		set {_ing::%loop-value%} to getItemFromKey(yaml value "items.custom.%{_key}%.recipe.ingredients.%loop-value%" of "custom_item_yaml")
+
+	#! Register Recipe !#
+	if {_shape::*} is set:
+		register shaped recipe:
+			id: "custom:%{_key}%"
+			result: {_i}
+			shape: {_shape::*}
+			group: {_group}
+			ingredients:
+				loop {_ing::*}:
+					set ingredient of loop-index to loop-value

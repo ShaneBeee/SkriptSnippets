@@ -1,0 +1,57 @@
+# Sample YAML for Custom-Item-Loader.sk
+items:
+  custom:
+    # Item Key (ex: this item will be "custom:some_item")
+    some_item:
+      # Minecraft Key of item for this custom item
+      type: minecraft:diamond_sword
+      # ItemStack amount of this item by default (mostly used in recipes)
+      amount: 1
+      # Name of item (optional)
+      name: "&aBOB"
+      # Lore of item (optional)
+      lore:
+        - "&cLook mah im in a yaml file"
+        - "&bdont tell dad"
+      # Enchantments of item (optional)
+      enchantments:
+        # Format: "minecraft:enchantment_key=level"
+        - minecraft:sharpness=5
+        - minecraft:unbreaking=3
+      # Additional NBT to be included on the item (optional)
+      nbt: '{AttributeModifiers:[{AttributeName:"generic.attack_damage",Amount:20,Slot:mainhand,Name:"generic.attack_damage",UUID:[I;-124119,27795,161253,-55590]},{AttributeName:"generic.attack_speed",Amount:4,Slot:mainhand,Name:"generic.attack_speed",UUID:[I;-124119,27895,161253,-55790]}]}'
+      # Recipe for item (optional)
+      # The key for this recipe will be the key of this item (this example: "custom:some_item")
+      recipe:
+        # Represents the group of a recipe to keep certain items together (optional)
+        group: some_group
+        # Represents the shape of a recipe (required)
+        shape:
+          - 'aaa'
+          - 'bbb'
+          - 'aaa'
+        # Ingredients to match shape (required)
+        # Accepts Minecraft items as well as custom items from this config, see below example
+        ingredients:
+          a: minecraft:stick
+          b: minecraft:stone
+
+    my_cool_item:
+      type: minecraft:netherite_sword
+      amount: 1
+      name: "&bMy Cool Item"
+      lore:
+        - "&cOk lets test this out"
+      enchantments:
+        - minecraft:sharpness=10
+        - minecraft:unbreaking=10
+      recipe:
+        shape:
+          - 'aaa'
+          - ' b '
+          - 'aaa'
+        ingredients:
+          a: minecraft:stick
+          # This recipe takes the first item from this config as an ingredient
+          # The item used here (MUST BE REGISTERED BEFORE THIS ONE)
+          b: custom:some_item
