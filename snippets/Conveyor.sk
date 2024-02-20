@@ -1,3 +1,4 @@
+
 # Conveyors
 # By ShaneBee
 
@@ -8,7 +9,7 @@
 
 options:
 	# Speed of the conveyor (seems to break above .45)
-	speed: .20
+	speed: 0.20
 
 function reposition(e: entity, b: block, d: string):
 	set {_custom} to tag "custom" of nbt compound of {_e}
@@ -19,8 +20,7 @@ function reposition(e: entity, b: block, d: string):
 
 function getVelocity(e: entity, b: block) :: vector:
 	set {_nbt} to nbt compound of {_e}
-	set {_custom} to tag "custom" of {_nbt}
-	set {_dir} to tag "direction" of {_custom}
+	set {_dir} to tag "custom;direction" of {_nbt}
 	
 	set {_tag} to block data tag "shape" of {_b}
 
@@ -108,9 +108,12 @@ function conveyor(e: entity):
 
 command /test <text>:
 	trigger:
+		if arg-1 = "reset":
+			delete all dropped items
+			stop
 		set {_l} to location of target block
 		loop 20 times:
-			spawn a dropped dirt -0.5 above {_l} with nbt "{Item:%nbt compound of player's tool%,PickupDelay:32767,Motion:[0,0,0]}"
+			spawn a dropped dirt -0.5 above {_l} with nbt from "{Item:%full nbt compound of player's tool%,PickupDelay:32767,Motion:[0,0,0]}"
 			set {_e} to last spawned entity
 			set gravity of {_e} to false
 
@@ -122,3 +125,6 @@ command /test <text>:
 			conveyor({_e})
 			wait 2 ticks
 		#kill {_e}
+
+on tab complete of "test":
+	set tab completions for position 1 to "north", "south", "east", "west", "reset"
