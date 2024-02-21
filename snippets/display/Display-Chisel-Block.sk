@@ -19,7 +19,7 @@ function placeFakeBlock(loc: location, data: block data, size: number = 1) :: en
 	if {_data} = air[]:
 		stop
 	#set {_loc} to {_loc} ~ vector(-0.25, 0, -0.25)
-	le spawn block display at {_loc}
+	spawn block display at {_loc}
 	set {_e} to last spawned entity
 	set display block data of {_e} to {_data}
 	set display scale of {_e} to vector({_size}, {_size}, {_size})
@@ -29,7 +29,7 @@ function placeFakeBlock(loc: location, data: block data, size: number = 1) :: en
 function f(l: location, scale: number):
 	set {_o} to {_scale} / 2
 	set {_loc} to {_l} ~ vector({_o}, 0, {_o})
-	le spawn interaction at {_loc}
+	spawn interaction at {_loc}
 	set {_e} to last spawned entity
 
 	set interaction width of {_e} to {_scale}

@@ -18,7 +18,7 @@ command /bush <b:number=1>:
 #! FUNCTIONS !#
 # Place a bush
 function placeBush(b: block):
-	le spawn item display at location 0.5 above {_b}
+	spawn item display at location 0.5 above {_b}
 	set {_e} to last spawned entity
 	set display item of {_e} to {-bush::item::1}
 	set display scale of {_e} to vector(0,0,0)

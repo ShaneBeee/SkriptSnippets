@@ -9,7 +9,7 @@
 # Function to turn a block into quick sand
 function quickSand(b: block):
 	set {_l} to exact location of {_b}
-	le spawn block display at {_l}
+	spawn block display at {_l}
 	set {_e} to last spawned entity
 	set display block data of {_e} to sand[]
 	set block at {_b} to cobweb

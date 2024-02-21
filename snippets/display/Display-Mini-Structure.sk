@@ -11,7 +11,7 @@
 function placeFakeBlock(loc: location, data: block data, size: number = 1):
 	if {_data} = air[]:
 		stop
-	le spawn block display at {_loc}
+	spawn block display at {_loc}
 	set {_e} to last spawned entity
 	set display block data of {_e} to {_data}
 	set display scale of {_e} to vector({_size}, {_size}, {_size})
