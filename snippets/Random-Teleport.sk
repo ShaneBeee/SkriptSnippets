@@ -3,7 +3,7 @@
 
 # A Simple little random teleport command, that won't lag your server
 
-# Requirements = SkBee 2.10.1+
+# Requirements = SkBee 2.10.1+, Skript 2.8+
 
 options:
 	# Max radius from 0,0
@@ -15,45 +15,50 @@ options:
 #! FUNCTIONS !#
 # Check if a block is safe to spawn at
 function isSafeBlock(b: block) :: boolean:
-	if {_b} is not solid:
-		if {_b} != lava[] or water[]:
-			return true
+	if all:
+		{_b} is not solid
+		{_b} != lava[], water[] or sweet_berry_bush[]
+	then:
+		return true
 	return false
 
 # Get the highest safe block at a location
 function getHighestBlock(l: location) :: location:
-	if world of {_l} = world "world":
+	if world environment of world of {_l} = normal:
 		set {_b} to highest block at {_l}
 		if {_b} is any leaves:
 			loop blocks below block below {_b}:
-				if loop-block is solid:
-					if loop-block is not any leaves:
-						if isSafeBlock(block above loop-block) = true:
-							if isSafeBlock(block 2 above loop-block) = true:
-								return location 0.5 above loop-block
+				if all:
+					loop-block is solid
+					loop-block is not any leaves
+					isSafeBlock(block above loop-block) = true
+					isSafeBlock(block 2 above loop-block) = true
+				then:
+					return location 0.5 above loop-block
 		else if {_b} is solid:
 			return location 0.5 above {_b}
-	else if world of {_l} = world "world_nether":
+	else if world environment of world of {_l} = nether:
 		loop blocks above {_l}:
-			if loop-block is solid:
-				if isSafeBlock(block above loop-block) = true:
-					if isSafeBlock(block 2 above loop-block) = true:
-						return location 0.5 above loop-block
+			if all:
+				loop-block is solid
+				isSafeBlock(block above loop-block) = true
+				isSafeBlock(block 2 above loop-block) = true
+			then:
+				return location 0.5 above loop-block
 
 #! COMMAND !#
-command /rtp:
+command /rtp [<world:world=%world of player%>]:
 	trigger:
 		send "&7[&bRTP&7] Looking for a suitable location..."
 		loop {@attempts} times:
 			set {_x} to random integer between -{@radius} and {@radius}
 			set {_z} to random integer between -{@radius} and {@radius}
-			set {_loc} to location({_x}, 1, {_z}, world of player)
+			set {_loc} to location({_x}, 1, {_z}, {_world})
 			async load chunk at {_loc}
 			set {_b} to getHighestBlock({_loc})
 			if {_b} is set:
 				set {_safe} to {_b}
 				exit loop
-
 		if {_safe} is set:
 			send "&7[&bRTP&7] &aFound a suitable location!"
 			set yaw of {_safe} to yaw of player
@@ -61,3 +66,6 @@ command /rtp:
 			teleport player to {_safe}
 		else:
 			send "&7[&bRTP&7] &cFailed to find a suitable location!"
+
+on tab complete of "rtp":
+	set tab completions for position 1 to all worlds
