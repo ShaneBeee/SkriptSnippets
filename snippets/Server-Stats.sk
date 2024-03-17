@@ -1,89 +1,138 @@
-# Server Stats
-# By ShaneBee
+# Bee Stats
+# By: ShaneBee
 
-# THIS IS NOT PRODUCTION SAFE
-# IT IS NOT EFFICIENT AT ALL
-# USE WITH CAUTION
+# This little stat system can show you some useful info about your server
+# This can be used to help debug/find performance issues
 
-# Requirements: SkBee, skript-reflect, MC 1.20+, Skript 2.7+
-# Optional: NMS-API (for custom biome support in biome bar, can be found at `https://github.com/ShaneBeee/NMS-API`)
+#! PERMISSIONS !#
+# I recommend not giving perms to too many players
+# While I have tried my best to boost performance of this,
+# it may still cause issues, use sparingly
+#
+# "beestats.sidebar" = Player will see the sidebar
+# "beestats.rambar" = Player will see the ram bar
+# "beestats.biomebar" = Player will see the biome bar
 
-function updateChunks():
+# Requirements:
+# - Skript 2.7+
+# - SkBee 3.4.0+
+# - Skript-Reflect 2.4+
+# - NMS-API [Optional, used for custom biomes] (found at https://github.com/ShaneBeee/NMS-API)
+
+#! MANAGE CHUNK COUNTS !#
+function updateChunks(w: world):
 	wait 1 tick
-	set {-cw} to size of loaded chunks of world "world"
-	set {-cn} to size of loaded chunks of world "world_nether"
+	set {-chunks::%{_w}%} to size of loaded chunks of {_w}
+
+on chunk load:
+	updateChunks(world of event-chunk)
+
+on chunk unload:
+	updateChunks(world of event-chunk)
 
 on load:
 	set {-grad} to -1
 	set {-srv} to server.getServer()
-	updateChunks()
+	loop all worlds:
+		updateChunks(loop-world)
 
 every tick:
-	set {-at} to {-srv}.getAverageTickTime()
-	if {-at} > 15:
-		set {-lagging} to true
-	else if {-at} < 8:
-		set {-lagging} to false
-
-	set {_p} to {-at}
-	if {_p} > 40:
-		set {_p} to 40
-	set {_p} to {_p} / 40
-
-	set {_m} to mini message from "<transition:##17FA04:##F3FA04:##FA7804:##FA1704:%{_p}%>%{-at}%"
-	set {-tick} to {_m} #this stupidness is to prevent "you cant save a mini message" warning
-
+	# Update the gradient position for the scoreboard title
 	add 0.025 to {-grad}
 	if {-grad} > 1:
 		set {-grad} to -1
 
-on chunk load:
-	updateChunks()
+on load:
+	parse if server platform = "Paper":
+		locally suppress variable save warning
+		async run 0 ticks later repeating every tick:
+			set {-at} to {-srv}.getAverageTickTime()
+			if {-at} > 15:
+				set {-lagging} to true
+			else if {-at} < 8:
+				set {-lagging} to false
 
-on chunk unload:
-	updateChunks()
+			set {_p} to {-at}
+			if {_p} > 40:
+				set {_p} to 40
+			set {_p} to {_p} / 40
+
+			set {-tick} to mini message from "<transition:##17FA04:##F3FA04:##FA7804:##FA1704:%{_p} ? 0%>%{-at}%"
 
 every second:
-	set {_t::*} to tps
-	loop {_t::*}:
-		if loop-value > 18:
-			set {_tps::%loop-index%} to "&a%loop-value%"
-		else if loop-value > 15:
-			set {_tps::%loop-index%} to "&e%loop-value%"
-		else:
-			set {_tps::%loop-index%} to "&c%loop-value%"
-	set {-tps} to join {_tps::*} using "&7, "
+	parse if server platform = "Paper":
+		set {_t::*} to tps
+		loop {_t::*}:
+			if loop-value > 18:
+				set {_tps::%loop-index%} to "&a%loop-value%"
+			else if loop-value > 15:
+				set {_tps::%loop-index%} to "&e%loop-value%"
+			else:
+				set {_tps::%loop-index%} to "&c%loop-value%"
+		set {-tps} to join {_tps::*} using "&7, "
 
+every 5 tick:
+	#set {_e::*} to ...(world "world").getEntities()
+	set {_e::*} to all entities
+	async run 0 ticks later:
+		set {-statsboard::entities::all} to size of {_e::*}
+		set {-statsboard::entities::tick} to size of {_e::*} where [input is ticking]
+		set {-statsboard::mobs::all} to size of {_e::*} where [input is a mob]
+		set {-statsboard::mobs::tick} to size of (({_e::*} where [input is a mob]) where [input is ticking])
+		set {-statsboard::enemies::all} to size of {_e::*} where [input is an enemy]
+		set {-statsboard::enemies::tick} to size of (({_e::*} where [input is an enemy]) where [input is ticking])
+		set {-statsboard::displays::all} to size of {_e::*} where [input is a display]
+		set {-statsboard::displays::tick} to size of (({_e::*} where [input is a display]) where [input is ticking])
+		set {-statsboard::villagers::all} to size of {_e::*} where [input is a villager]
+		set {-statsboard::villagers::tick} to size of (({_e::*} where [input is a villager]) where [input is ticking])
+		set {-statsboard::falling::all} to size of {_e::*} where ["%input%" contains "falling"]
+		set {-statsboard::falling::tick} to size of (({_e::*} where ["%input%" contains "falling"]) where [input is ticking])
+		set {-statsboard::drops::all} to size of {_e::*} where [input is a dropped item]
+		set {-statsboard::drops::tick} to size of (({_e::*} where [input is a dropped item]) where [input is ticking])
+
+import:
+	java.lang.Thread
 function updateBoard(p: player):
-	set line 15 of {_p}'s scoreboard to "<##11C3D8>Loaded Chunks:"
-	set line 12 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
-	set line 10 of {_p}'s scoreboard to "<##11C3D8>TPS:"
-	set line 8 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
-	while {_p} is online:
-		if {-boards} is not set:
-			exit loop
-		set {_m} to mini message from "<grey>---[<gradient:##F008F4:##08F4B4:%{-grad}%>SERVER STATS<grey>]---"
-		set title of {_p}'s scoreboard to {_m}
-		set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-cw}%"
-		set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-cn}%"
-		set line 11 of {_p}'s scoreboard to "&7- %{-tick}%&7ms"
-		set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
-		set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%size of all entities where [input is ticking]%&7/<##11D875>%size of all entities%"
-		set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%size of all mobs where [input is ticking]%&7/<##11D875>%size of all mobs%"
-		set line 5 of {_p}'s scoreboard to "&7- &bEnemies: <##11D875>%size of all enemies where [input is ticking]%&7/<##11D875>%size of all enemies%"
-		set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%size of all displays where [input is ticking]%&7/<##11D875>%size of all displays%"
-		set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%size of all villagers where [input is ticking]%&7/<##11D875>%size of all villagers%"
-		set {_f} to size of all entities where ["%input%" contains "falling"]
-		set {_ft} to size of (all entities where ["%input%" contains "falling"]) where [input is ticking]
-		set line 2 of {_p}'s scoreboard to "&7- &bFalling: <##11D875>%{_ft}%&7/<##11D875>%{_f}%"
-		set line 1 of {_p}'s scoreboard to "&7- &bDropped: <##11D875>%size of all dropped items where [input is ticking]%&7/<##11D875>%size of all dropped items%"
-		wait 1 tick
+	if {_p} does not have permission "beestats.sidebar":
+		stop
+	parse if server platform = "Paper":
+		set line 15 of {_p}'s scoreboard to "<##11C3D8>Loaded Chunks:"
+		set line 12 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
+		set line 10 of {_p}'s scoreboard to "<##11C3D8>TPS:"
+		set line 8 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
+		async run 0 ticks later repeating every 1 ticks:
+		#while {_p} is connected:
+			if {_p} is not connected:
+				stop current task
+			if {-boards} is not set:
+				stop current task
+			if {-grad} > 1:
+				set {-grad} to -1
+			set {_m} to mini message from "<grey>---[<gradient:##F008F4:##08F4B4:%{-grad}%>SERVER STATS<grey>]---"
+			set title of {_p}'s scoreboard to {_m}
+			set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-chunks::%world ""world""%}%"
+			set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-chunks::%world ""world_nether""%}%"
+			set line 11 of {_p}'s scoreboard to "&7- %{-tick}%&7ms"
+			set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
+			set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%{-statsboard::entities::tick}%&7/<##11D875>%{-statsboard::entities::all}%"
+			set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%{-statsboard::mobs::tick}%&7/<##11D875>%{-statsboard::mobs::all}%"
+			set line 5 of {_p}'s scoreboard to "&7- &bEnemies: <##11D875>%{-statsboard::enemies::tick}%&7/<##11D875>%{-statsboard::enemies::all}%"
+			set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%{-statsboard::displays::tick}%&7/<##11D875>%{-statsboard::displays::all}%"
+			set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%{-statsboard::villagers::tick}%&7/<##11D875>%{-statsboard::villagers::all}%"
+			set line 2 of {_p}'s scoreboard to "&7- &bFalling: <##11D875>%{-statsboard::falling::tick}%&7/<##11D875>%{-statsboard::falling::all}%"
+			set line 1 of {_p}'s scoreboard to "&7- &bDropped: <##11D875>%{-statsboard::drops::tick}%&7/<##11D875>%{-statsboard::drops::all}%"
+			#wait 1 tick
+	else:
+		set title of scoreboard of {_p} to "&7[&cUnavailable&7]"
+		set line 1 of scoreboard of {_p} to "&7Stats board requires Paper"
 
 on join:
 	updateBoard(player)
 
 on unload:
 	delete {-boards}
+	clear scoreboard of all players
+	stop all tasks
 
 on load:
 	set {-biomebar} to true
@@ -118,13 +167,18 @@ on load:
 	parse if class "com.shanebeestudios.nms.api.world.WorldApi" exists:
 		set {-worldapi} to class "com.shanebeestudios.nms.api.world.WorldApi"
 
-every tick:
+every 5 tick:
 	if {-biomebar} is set:
 		loop all players:
+			if loop-player does not have permission "beestats.biomebar":
+				continue
 			if loop-player's tool is a debug stick:
 				continue
 			if {-worldapi} is set:
-				set {_b} to {-worldapi}.getBiome(location of loop-player)
+				set {_b} to try {-worldapi}.getBiome(location of loop-player)
+				if the last java error is set:
+					# This means the API failed, so lets get rid of it
+					delete {-worldapi}
 			else:
 				set {_b} to namespaced key of biome at loop-player
 			set {_b} to "%{_b}%"
@@ -139,6 +193,7 @@ import:
 	java.lang.Runtime
 
 on load:
+	wait 2 ticks
 	if {-bar} is not set:
 		ramBar()
 
@@ -147,7 +202,8 @@ on unload:
 	delete {-bar}
 
 on join:
-	add player to {-bar}
+	if player has permission "beestats.rambar":
+		add player to {-bar}
 
 function ramBar():
 	if {-bar} is not set:
@@ -155,9 +211,11 @@ function ramBar():
 		set {_max} to {_run}.maxMemory() / 1024 / 1024
 		set {-bar} to boss bar with id "ram" with title "FILL IN" with color blue with style solid_bar
 		add all players to {-bar}
-		while {-bar} is set:
+		async run 0 ticks later repeating every 10 ticks:
+			if {-bar} is not set:
+				stop current task
 			set {_free} to {_run}.freeMemory() / 1024 / 1024
-			set {_used} to {_max} - {_free}
+			set {_used} to floor({_max} - {_free})
 			set bar title of {-bar} to "&7Ram: &b%{_used}%&7mb / &b%{_max}%&7mb"
 			set {_pro} to ({_used} / {_max}) * 100
 			set bar progress of {-bar} to {_pro}
@@ -167,7 +225,6 @@ function ramBar():
 				set bar color of {-bar} to yellow
 			else:
 				set bar color of {-bar} to green
-			wait 10 ticks
 	else:
 		delete boss bar with id "ram"
 		delete {-bar}
