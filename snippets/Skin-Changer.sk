@@ -32,7 +32,8 @@ expression [player] profile name of %player%:
 	set:
 		set {_player} to expr-1
 		set {_name} to change value
-
+		if length of {_name} > 16:
+			set {_name} to first 16 characters of {_name}
 		set {_pro} to {_player}.getPlayerProfile()
 		{_pro}.setName({_name})
 		{_player}.setPlayerProfile({_pro})
