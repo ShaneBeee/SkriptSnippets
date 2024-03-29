@@ -1,0 +1,99 @@
+# Structure Placer
+# By: ShaneBee
+
+# This little script allows you to visually structures before placing them
+# using block display entities.
+
+# Requires Minecraft 1.19.4+ and SkBee 2.8.1+
+
+#! This loads all the available structures to be placed !#
+# Minecraft only loads ones that its placed in the world
+# But you can type out any other available structure and it'll work
+local function update():
+	loop ...server.getServer().getStructureManager().getStructures().keySet():
+		set {_a} to "%loop-value%"
+		set {-structures::%{_a}%} to {_a}
+
+on load:
+	wait 1 tick
+	update()
+
+#! COMMAND !#
+command /structure <s:string>:
+	trigger:
+		if {_s} = "cancel":
+			delete {-test::%uuid of player%}
+		else:
+			set {_l} to exact location of block above target block
+
+			set {_s} to structure named {_s}
+			set {-test::%uuid of player%} to {_s}
+			set {-test::%uuid of player%::rotation} to 0
+			set {_n} to (unix timestamp of now * 1000)
+			loop blockstates of structure {_s}:
+				if {-test::%uuid of player%} is not set:
+					kill {_e::*}
+					stop
+				if (unix timestamp of now * 1000) - {_n} > 30:
+					wait 1 tick
+					set {_n} to (unix timestamp of now * 1000)
+				set {_data} to blockstate blockdata of loop-value
+				if {_data} = air[] or jigsaw[]:
+					continue
+				set {_off} to blockstate offset of loop-value
+				spawn block display at {_l}:
+					set display blockdata of entity to {_data}
+					set display translation of entity to {_off}
+					set display teleport duration of entity to 5
+					set display brightness of entity to displayBrightness(15,15)
+					set display scale of entity to vector(1.001,1.001,1.001)
+					set interpolation start of entity to 0
+					set interpolation duration of entity to 5
+					set {_e::%uuid of entity%} to entity
+
+			while {-test::%uuid of player%} is set:
+				set {_l} to exact location of block above target block
+				teleport {_e::*} to {_l}
+				if {-rotate::%uuid of player%} is true:
+					loop {_e::*}:
+						set interpolation start of loop-value to 0
+						set interpolation duration of loop-value to 5
+						set {_q} to display right rotation of loop-value rotated around vector(0,90,0)
+						set display right rotation of loop-value to {_q}
+						set {_rot} to display translation of loop-value
+						rotate {_rot} around y axis by 90
+						set display translation of loop-value to {_rot}
+					delete {-rotate::%uuid of player%}
+				wait 5 tick
+			kill {_e::*}
+
+on left click:
+	if {-test::%uuid of player%} is set:
+		if player is not sneaking:
+			cancel event
+			set {-rotate::%uuid of player%} to true
+			add 1 to {-test::%uuid of player%::rotation}
+
+on right click:
+	if {-test::%uuid of player%} is set:
+		cancel event
+		set {_loc} to exact location of block above target block
+		set {_s} to {-test::%uuid of player%}
+		set {_rot} to mod({-test::%uuid of player%::rotation},4)
+		delete {-test::%uuid of player%}
+
+		if {_rot} = 1:
+			set structure rotation of {_s} to counterclockwise_90
+			set {_loc} to location 1 block north of {_loc}
+		else if {_rot} = 2:
+			set structure rotation of {_s} to clockwise_180
+			set {_loc} to location 1 block north of location 1 block west of {_loc}
+		else if {_rot} = 3:
+			set structure rotation of {_s} to clockwise_90
+			set {_loc} to location 1 block west of {_loc}
+
+		place structure {_s} at {_loc}
+
+
+on tab complete of "/structure":
+	set tab completions for position 1 to {-structures::*}, "cancel"
