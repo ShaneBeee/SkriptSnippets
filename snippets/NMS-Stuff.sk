@@ -1,0 +1,19 @@
+# NMS Stuff
+# By: ShaneBee
+
+# This snippet just provides some quick NMS things
+# Requirements: Skript-Reflect
+
+import:
+	net.minecraft.network.protocol.game.PacketPlayOutRespawn
+
+#! OPEN TERRAIN LOADING SCREEN !#
+# This was written for 1.20.4
+# To close just use `close inventory of player`
+effect open loading terrain screen for %players%:
+	trigger:
+		loop exprs-1:
+			set {_level} to loop-value.getWorld().getHandle()
+			set {_common} to loop-value.getHandle().d({_level})
+			set {_packet} to new PacketPlayOutRespawn({_common}, 3)
+			loop-value.getHandle().c.b({_packet})
