@@ -36,12 +36,6 @@ on load:
 	loop all worlds:
 		updateChunks(loop-world)
 
-every tick:
-	# Update the gradient position for the scoreboard title
-	add 0.025 to {-grad}
-	if {-grad} > 1:
-		set {-grad} to -1
-
 on load:
 	parse if server platform = "Paper":
 		locally suppress variable save warning
@@ -57,7 +51,16 @@ on load:
 				set {_p} to 40
 			set {_p} to {_p} / 40
 
-			set {-tick} to mini message from "<transition:##17FA04:##F3FA04:##FA7804:##FA1704:%{_p} ? 0%>%{-at}%"
+			set {-statsboard::avgtick} to mini message from "<transition:##17FA04:##F3FA04:##FA7804:##FA1704:%{_p} ? 0%>%{-at}%"
+
+			add 0.025 to {-grad}
+			if {-grad} > 1:
+				set {-grad} to -1
+			set {_grad} to {-grad}
+			# Silly off thread thing
+			if {_grad} > 1:
+				set {_grad} to -1
+			set {-statsboard::title} to mini message from "<grey>---[<gradient:##F008F4:##08F4B4:%{_grad} ? 0%>SERVER STATS<grey>]---"
 
 every second:
 	parse if server platform = "Paper":
@@ -69,10 +72,9 @@ every second:
 				set {_tps::%loop-index%} to "&e%loop-value%"
 			else:
 				set {_tps::%loop-index%} to "&c%loop-value%"
-		set {-tps} to join {_tps::*} using "&7, "
+		set {-statsboard::tps} to join {_tps::*} using "&7, "
 
 every 5 tick:
-	#set {_e::*} to ...(world "world").getEntities()
 	set {_e::*} to all entities
 	async run 0 ticks later:
 		set {-statsboard::entities::all} to size of {_e::*}
@@ -90,44 +92,38 @@ every 5 tick:
 		set {-statsboard::drops::all} to size of {_e::*} where [input is a dropped item]
 		set {-statsboard::drops::tick} to size of (({_e::*} where [input is a dropped item]) where [input is ticking])
 
-import:
-	java.lang.Thread
-function updateBoard(p: player):
-	if {_p} does not have permission "beestats.sidebar":
-		stop
+function updateBoard():
 	parse if server platform = "Paper":
-		set line 15 of {_p}'s scoreboard to "<##11C3D8>Loaded Chunks:"
-		set line 12 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
-		set line 10 of {_p}'s scoreboard to "<##11C3D8>TPS:"
-		set line 8 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
+		set {_n} to (unix timestamp of now * 1000)
 		async run 0 ticks later repeating every 1 ticks:
-		#while {_p} is connected:
-			if {_p} is not connected:
-				stop current task
-			if {-boards} is not set:
-				stop current task
-			if {-grad} > 1:
-				set {-grad} to -1
-			set {_m} to mini message from "<grey>---[<gradient:##F008F4:##08F4B4:%{-grad}%>SERVER STATS<grey>]---"
-			set title of {_p}'s scoreboard to {_m}
-			set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-chunks::%world ""world""%}%"
-			set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-chunks::%world ""world_nether""%}%"
-			set line 11 of {_p}'s scoreboard to "&7- %{-tick}%&7ms"
-			set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-tps}%"
-			set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%{-statsboard::entities::tick}%&7/<##11D875>%{-statsboard::entities::all}%"
-			set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%{-statsboard::mobs::tick}%&7/<##11D875>%{-statsboard::mobs::all}%"
-			set line 5 of {_p}'s scoreboard to "&7- &bEnemies: <##11D875>%{-statsboard::enemies::tick}%&7/<##11D875>%{-statsboard::enemies::all}%"
-			set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%{-statsboard::displays::tick}%&7/<##11D875>%{-statsboard::displays::all}%"
-			set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%{-statsboard::villagers::tick}%&7/<##11D875>%{-statsboard::villagers::all}%"
-			set line 2 of {_p}'s scoreboard to "&7- &bFalling: <##11D875>%{-statsboard::falling::tick}%&7/<##11D875>%{-statsboard::falling::all}%"
-			set line 1 of {_p}'s scoreboard to "&7- &bDropped: <##11D875>%{-statsboard::drops::tick}%&7/<##11D875>%{-statsboard::drops::all}%"
-			#wait 1 tick
+			# Slow it down during sprinting
+			if (unix timestamp of now * 1000) - {_n} > 45:
+				set {_n} to (unix timestamp of now * 1000)
+				if {-boards} is not set:
+					stop current task
+				loop all players:
+					if loop-player doesn't have permission "beestats.sidebar":
+						continue
+					set {_p} to loop-player
+					set title of {_p}'s scoreboard to {-statsboard::title}
+					set line 15 of {_p}'s scoreboard to "<##11C3D8>Loaded Chunks:"
+					set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-chunks::%world ""world""%}%"
+					set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-chunks::%world ""world_nether""%}%"
+					set line 12 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
+					set line 11 of {_p}'s scoreboard to "&7- %{-statsboard::avgtick}%&7ms"
+					set line 10 of {_p}'s scoreboard to "<##11C3D8>TPS:"
+					set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-statsboard::tps}%"
+					set line 8 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
+					set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%{-statsboard::entities::tick}%&7/<##11D875>%{-statsboard::entities::all}%"
+					set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%{-statsboard::mobs::tick}%&7/<##11D875>%{-statsboard::mobs::all}%"
+					set line 5 of {_p}'s scoreboard to "&7- &bEnemies: <##11D875>%{-statsboard::enemies::tick}%&7/<##11D875>%{-statsboard::enemies::all}%"
+					set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%{-statsboard::displays::tick}%&7/<##11D875>%{-statsboard::displays::all}%"
+					set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%{-statsboard::villagers::tick}%&7/<##11D875>%{-statsboard::villagers::all}%"
+					set line 2 of {_p}'s scoreboard to "&7- &bFalling: <##11D875>%{-statsboard::falling::tick}%&7/<##11D875>%{-statsboard::falling::all}%"
+					set line 1 of {_p}'s scoreboard to "&7- &bDropped: <##11D875>%{-statsboard::drops::tick}%&7/<##11D875>%{-statsboard::drops::all}%"
 	else:
 		set title of scoreboard of {_p} to "&7[&cUnavailable&7]"
 		set line 1 of scoreboard of {_p} to "&7Stats board requires Paper"
-
-on join:
-	updateBoard(player)
 
 on unload:
 	delete {-boards}
@@ -136,15 +132,14 @@ on unload:
 
 on load:
 	set {-biomebar} to true
-	wait 2 ticks
+	wait 5 ticks
 	set {-boards} to true
-	loop all players:
-		updateBoard(loop-player)
+	updateBoard()
 
 command /stats [<text>]:
 	trigger:
 		if arg-1 = "sidebar":
-			toggle scoreboard of player
+			delete {-boards::%uuid of player%}
 		else if arg-1 = "rambar":
 			ramBar()
 		else if arg-1 = "biomebar":
@@ -210,7 +205,7 @@ function ramBar():
 		set {_run} to Runtime.getRuntime()
 		set {_max} to {_run}.maxMemory() / 1024 / 1024
 		set {-bar} to boss bar with id "ram" with title "FILL IN" with color blue with style solid_bar
-		add all players to {-bar}
+		add (all players where [input has permission "beestats.rambar"]) to {-bar}
 		async run 0 ticks later repeating every 10 ticks:
 			if {-bar} is not set:
 				stop current task
@@ -218,7 +213,7 @@ function ramBar():
 			set {_used} to floor({_max} - {_free})
 			set bar title of {-bar} to "&7Ram: &b%{_used}%&7mb / &b%{_max}%&7mb"
 			set {_pro} to ({_used} / {_max}) * 100
-			set bar progress of {-bar} to {_pro}
+			set bar progress of {-bar} to {_pro} ? 0
 			if {_pro} > 90:
 				set bar color of {-bar} to red
 			else if {_pro} > 75:
