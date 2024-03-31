@@ -139,7 +139,13 @@ on load:
 command /stats [<text>]:
 	trigger:
 		if arg-1 = "sidebar":
-			delete {-boards::%uuid of player%}
+			if {-boards} is not set:
+				set {-boards} to true
+				updateBoard()
+			else:
+				delete {-boards}
+				wait 1 tick
+				clear scoreboard of all players
 		else if arg-1 = "rambar":
 			ramBar()
 		else if arg-1 = "biomebar":
