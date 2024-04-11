@@ -101,6 +101,7 @@ function updateBoard():
 				set {_n} to (unix timestamp of now * 1000)
 				if {-boards} is not set:
 					stop current task
+					stop
 				loop all players:
 					if loop-player doesn't have permission "beestats.sidebar":
 						continue
