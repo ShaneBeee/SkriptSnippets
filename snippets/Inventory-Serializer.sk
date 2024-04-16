@@ -11,7 +11,7 @@ function saveInvNBT(p: player, key: string):
 	loop inventory of {_p}:
 		set {_s} to index of loop-slot
 		set {_i} to full nbt of loop-slot
-		set tag "Slot" of {_i} to {_s}
+		set int tag "Slot" of {_i} to {_s}
 		add {_i} to {_i::*}
 	set compound list tag "custom;SavedInv;%{_key}%" of nbt of {_p} to {_i::*}
 
@@ -19,7 +19,7 @@ function saveInvNBT(p: player, key: string):
 function restoreInvNBT(p: player, key: string):
 	set {_i::*} to compound list tag "custom;SavedInv;%{_key}%" of nbt of {_p}
 	loop {_i::*}:
-		set {_s} to tag "Slot" of loop-value
+		set {_s} to int tag "Slot" of loop-value
 		set {_i} to nbt item from loop-value
 		set slot {_s} of {_p} to {_i}
 	delete tag "custom;SavedInv;%{_key}%" of nbt of {_p}
@@ -29,7 +29,7 @@ function saveInvVAR(p: player, key: string):
 	loop inventory of {_p}:
 		set {_s} to index of loop-slot
 		set {_i} to full nbt of loop-slot
-		set tag "Slot" of {_i} to {_s}
+		set int tag "Slot" of {_i} to {_s}
 		add {_i} to {_i::*}
 	set {_n} to nbt from "{}"
 	set compound list tag "SavedInv" of {_n} to {_i::*}
@@ -39,7 +39,7 @@ function saveInvVAR(p: player, key: string):
 function restoreInvVAR(p: player, key: string):
 	set {_i::*} to compound list tag "SavedInv" of {SavedInv::%uuid of {_p}%::%{_key}%}
 	loop {_i::*}:
-		set {_s} to tag "Slot" of loop-value
+		set {_s} to int tag "Slot" of loop-value
 		set {_i} to nbt item from loop-value
 		set slot {_s} of {_p} to {_i}
 	delete {SavedInv::%uuid of {_p}%::%{_key}%}
