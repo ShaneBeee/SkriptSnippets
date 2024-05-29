@@ -14,7 +14,7 @@ function quickSand(b: block):
 	set display block data of {_e} to sand[]
 	set block at {_b} to cobweb
 	set {_n} to nbt of block at {_b}
-	set tag "custom;quickSand" of {_n} to uuid int array of {_e}
+	set uuid tag "custom;quickSand" of {_n} to uuid of {_e}
 
 #! EVENT HANDLER !#
 on break of cobweb:
