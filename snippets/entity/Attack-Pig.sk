@@ -9,7 +9,7 @@
 # Spawn a new attack pig
 function spawnAttackPig(l: location):
 	spawn a pig at {_l}:
-		set tag "custom;attackPig" of nbt of entity to true
+		set boolean tag "custom;attackPig" of nbt of entity to true
 		set name of entity to "&cAttack Pig"
 
 #! LISTENER !#
