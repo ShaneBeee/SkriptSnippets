@@ -1,0 +1,246 @@
+# Vanilla World with Simple Decor
+# By ShaneBee
+
+# This snippet shows off a world generator that may look somewhat close to vanilla Minecraft
+# but with simple decor
+
+# Requirements: SkBee, SkNoise
+
+on load:
+	wait 2 ticks
+	if world "world_vanilla_like" is not loaded:
+		send "&bLoading world_vanilla_like"
+		set {_w} to world creator named "world_vanilla_like"
+		set chunk generator of {_w} to chunk generator with id "test"
+		load world from creator {_w}
+		send "&aLoaded world_vanilla_like"
+	suppress variable save warning
+	# Obviously use whatever structure you want
+	set {-structure::stone_blob} to structure with id "minecraft:stone_blob"
+
+#! CREATE NOISE GENERATORS !#
+on load:
+	suppress variable save warning
+	set {-gen1} to new perlin generator with seed 234
+	set octaves of {-gen1} to 4
+	set frequency of {-gen1} to 2
+	set lacunarity of {-gen1} to 3
+	set {-gen2} to new perlin generator with seed 234
+
+	set {-gen3} to new perlin generator with seed 999
+	set {-gen4} to new simplex generator with seed 888
+	set octaves of {-gen4} to 10
+	set frequency of {-gen4} to 10
+	set lacunarity of {-gen4} to 2
+
+#! NOISE EXPRESSIONS !#
+expression block noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		# Continental Layer
+		set {_value} to value of {-gen1} at ({_x} / 1000), 0, ({_z} / 1000)
+		set {_cont} to ({_value} + 0.1) * 5
+
+		# Mountain Layer
+		set {_value} to value of {-gen2} at ({_x} / 5), 0, ({_z} / 5)
+		set {_mount} to ({_value} + 1) * 15
+
+		return 64 + floor({_cont} * {_mount})
+
+expression biome noise at %vector%:
+	get:
+		set {_v} to expr-1
+		set {_x} to x of {_v}
+		set {_y} to y of {_v}
+		set {_z} to z of {_v}
+		return value of {-gen3} at ({_x} / 30), {_y}, ({_z} / 30)
+
+expression temperature noise at %vector%:
+	get:
+		set {_v} to expr-1
+		set {_x} to x of {_v}
+		set {_y} to y of {_v}
+		set {_z} to z of {_v}
+		set {_temp} to  (value of {-gen4} at ({_x} / 8000), {_y}, ({_z} / 8000)) + 1
+		return {_temp}
+
+expression calculated biome at %vector%:
+	return type: biome
+	get:
+		set {_v} to expr-1
+		set {_x} to x of {_v}
+		set {_y} to y of {_v} #currently not using
+		set {_z} to z of {_v}
+		set {_temp} to temperature noise at vector({_x}, 1, {_z})
+		set {_block} to block noise at {_x}, {_z}
+		set {_biomeNoise} to biome noise at vector({_x}, 1, {_z})
+
+		# CAVES
+		if {_y} < {_block} - 4:
+			if all:
+				{_y} < -10
+				{_temp} > 1
+			then:
+				set {_biome} to deep dark
+			else if {_temp} > 1.2:
+				set {_biome} to lush caves
+		# BEACHES
+		else if {_block} = 63 or 64:
+			if {_temp} > 1.4:
+				set {_biome} to river
+			else if {_temp} > 0.8:
+				set {_biome} to beach
+			else:
+				set {_biome} to snowy beach
+
+		# OCEAN
+		else if {_block} < 63:
+			if {_temp} > 1.2:
+				set {_biome} to warm ocean
+			else if {_temp} > 1.05:
+				set {_biome} to lukewarm ocean
+			else if {_temp} > 0.8:
+				set {_biome} to ocean
+			else:
+				set {_biome} to frozen ocean
+		else:
+			if {_temp} > 1.2:
+				if {_biomeNoise} > 0.6:
+					set {_biome} to badlands
+				else if {_biomeNoise} > -0.5:
+					set {_biome} to desert
+				else:
+					set {_biome} to savanna
+			else if {_temp} > 1.05:
+				if {_biomeNoise} > 0.6:
+					set {_biome} to jungle
+				else if {_biomeNoise} > 0.3:
+					set {_biome} to bamboo jungle
+				else if {_biomeNoise} > -0.2:
+					set {_biome} to sparse jungle
+				else if {_biomeNoise} > -0.6:
+					set {_biome} to swamp
+				else:
+					set {_biome} to mangrove swamp
+			else if {_temp} > 0.8:
+				if {_biomeNoise} > 0.5:
+					set {_biome} to flower forest
+				else if {_biomeNoise} > 0.25:
+					set {_biome} to windswept forest
+				else if {_biomeNoise} > 0.15:
+					set {_biome} to cherry grove
+				else if {_biomeNoise} > -0.15:
+					set {_biome} to old growth spruce taiga
+				else if {_biomeNoise} > -0.25:
+					set {_biome} to taiga
+				else if {_biomeNoise} > -0.35:
+					set {_biome} to old growth birch forest
+				else if {_biomeNoise} > -0.45:
+					set {_biome} to sunflower plains
+				else:
+					set {_biome} to plains
+			else:
+				if {_biomeNoise} > 0:
+					set {_biome} to snowy taiga
+				else:
+					set {_biome} to snowy slopes
+
+		return {_biome} ? plains
+
+#! REGISTER GENERATOR !#
+register chunk generator with id "test":
+	vanilla decor: false
+	vanilla caves: true
+	vanilla structures: false
+	vanilla mobs: false
+	height gen:
+		set {_x} to x coord of event-location
+		set {_z} to z coord of event-location
+		set {_n} to block noise at {_x}, {_z}
+		set chunkdata height to {_n} + 1
+	chunk gen:
+		loop 16 times:
+			loop 16 times:
+				set {_x} to (loop-number-1) - 1
+				set {_z} to (loop-number-2) - 1
+				set {_n} to block noise at ({_x} + (16 * chunkdata chunk x)), ({_z} + (16 * chunkdata chunk z))
+
+				set {_top} to {_n} if {_n} > 64 else 64
+
+				# Fill stone
+				set chunkdata blocks between vector({_x},-64,{_z}) and vector(({_x}),({_n}),({_z})) to stone[]
+
+
+				# Place surface
+				loop integers between {_n} and {_top}:
+					set {_y} to loop-number-3
+					set {_biome} to calculated biome at vector({_x} + (16 * chunkdata chunk x), {_y}, {_z} + (16 * chunkdata chunk z))
+
+					# Surface
+					if {_y} = {_n}:
+						if {_y} > 64:
+							if {_biome} = desert, badlands or beach:
+								set {_data} to sand[]
+							else if all:
+								{_biome} = mangrove swamp
+								chance of 45%
+							then:
+								set {_data} to mud[]
+							else:
+								set {_data} to grass_block[]
+						else:
+							set {_data} to sand[]
+
+					# Water
+					else if all:
+						{_y} > {_n}
+						{_y} < 64
+					then:
+						set {_data} to water[]
+
+					if {_data} is set:
+						set chunkdata block at vector({_x}, {_y}, {_z}) to {_data}
+						if {_data} is grass_block[] or mud[]:
+							set {_below} to dirt[]
+						else if {_data} is sand[]:
+							set {_below} to sandstone[]
+						if {_below} is set:
+							loop 3 times:
+								set {_yy} to loop-number-4
+								set chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) to {_below}
+						delete {_data}
+						delete {_below}
+	biome gen:
+		set {_l} to event-location
+		set {_x} to x coord of {_l}
+		set {_y} to y coord of {_l}
+		set {_z} to z coord of {_l}
+
+		set {_biome} to calculated biome at vector({_x}, {_y}, {_z})
+		set chunkdata biome to {_biome} ? plains
+
+	block pop:
+		# We start off by getting the x/z of a random block in the chunk
+		set {_x} to (random integer between 0 and 15)
+		set {_z} to (random integer between 0 and 15)
+
+		# We will grab the highest Y so we can determine where to place our structure
+		set {_y} to chunkdata highest y at vector({_x}, 0, {_z}) + 1
+
+		# We can now use this data to get the biome of the block where we want to place a structure
+		set {_biome} to chunk data biome at vector({_x}, {_y}, {_z})
+
+		# We can now place a structure at this location
+		# We can change the structure based on which biome we have here
+		if {_biome} = desert:
+			if chance of 25%:
+				# Example of populating a structure in a desert biome
+				place chunkdata structure {-structure::stone_blob} at vector({_x}, {_y}, {_z})
+			else:
+				loop 3 times:
+					set chunkdata block at vector({_x}, {_y}, {_z}) to cactus
+					add 1 to {_y}
+		else if "%{_biome}%" does not contain "ocean":
+			# Example of populating in all biomes that are not desert
+			populate cherry tree at vector({_x}, {_y}, {_z})

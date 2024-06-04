@@ -1,0 +1,55 @@
+# Mars
+# By ShaneBee
+
+# This snippet shows off a world generator that looks like mars
+
+# Requirements: SkBee, SkNoise
+
+on load:
+	if world "world_mars" is not loaded:
+		set {_w} to world creator named "world_mars"
+		set chunk generator of {_w} to chunk generator with id "mars"
+		load world from creator {_w}
+
+#! CREATE NOISE GENERATORS !#
+on load:
+	suppress variable save warning
+	set {-gen1} to new perlin generator with seed 234
+	set octaves of {-gen1} to 4
+	set frequency of {-gen1} to 2
+	set lacunarity of {-gen1} to 3
+	set {-gen2} to new perlin generator with seed 234
+
+#! NOISE EXPRESSIONS !#
+expression block noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		# Continental Layer
+		set {_value} to value of {-gen1} at ({_x} / 1000), 0, ({_z} / 1000)
+		set {_cont} to ({_value} + 0.1) * 5
+
+		# Mountain Layer
+		set {_value} to value of {-gen2} at ({_x} / 5), 0, ({_z} / 5)
+		set {_mount} to ({_value} + 1) * 15
+
+		return 64 + floor({_cont} * {_mount})
+
+#! REGISTER GENERATOR !#
+register chunk generator with id "mars":
+	chunk gen:
+		loop 16 times:
+			loop 16 times:
+				set {_x} to (loop-number-1) - 1
+				set {_z} to (loop-number-2) - 1
+
+				# Let's get the highest point for a block
+				set {_n} to block noise at ({_x} + (chunkdata chunk x * 16)), ({_z} + (chunkdata chunk z * 16))
+				# Now we set the blocks from 0 to our noise level filling in our world
+				set chunkdata blocks within vector({_x}, 0, {_z}) and vector({_x}, ({_n} - 1), {_z}) to red_concrete[]
+				# Now we set our surface layer
+				set chunkdata block at vector({_x}, {_n}, {_z}) to red_concrete_powder[]
+	biome gen:
+		# Let's give our world a lil mars lookin biome
+		set chunkdata biome to crimson forest
+
