@@ -1,0 +1,68 @@
+# Chat
+# By Shane Bee
+
+# Requirements: SkBee
+
+# This little snippet shows of some useful chat functions:
+# - bad word filter
+# - [item] in chat
+# - delete messages
+
+function registerBadWord(s: string, r: string):
+	set {-badwords::%{_s}%} to {_r}
+
+on load:
+	registerBadWord("shit", "shirt")
+	registerBadWord("fuck", "fork")
+	registerBadWord("bitch", "bench")
+	registerBadWord("ass", "ash")
+	registerBadWord("dick", "deck")
+	registerBadWord("cock", "cork")
+	registerBadWord("faggot", "puppy")
+	registerBadWord("nigger", "kitty cat")
+
+on async chat:
+	if {_m} starts with "!": #Skript effect commands
+		stop
+
+	# Create our chat format
+	set {_p} to player
+	set {_t} to team prefix of team of {_p}
+	set {_w} to "%world of {_p}%"
+	replace "_" with " " in {_w}
+	set {_w} to strict proper case {_w}
+	if world of {_p} = world "world_nether":
+		set {_w} to "&cNether"
+	set {_m::1} to text component from "&7[&c-&7]"
+	set {_m::2} to text component from "%{_t}%&b%{_p}% &7» &r"
+	set {_m::3} to async chat message
+
+	# Prepare signed message for deletion
+	set {_sig} to signed chat message
+	add {_sig} to {-signatures::*}
+	create callback for {_m::1}:
+		if player has permission "chat.delete":
+			remove all players from {_sig}
+
+	set {_format} to merge components {_m::*}
+
+	# Replace [item] in chat
+	if "%{_format}%" contains "[item]":
+		set {_t} to translate component of player's tool
+		set color format of {_t} to rgb(0, 253, 196)
+		set hover event of {_t} to hover event showing player's tool
+		set {_m} to merge components ("[", {_t}, "]")
+		component replace "\[item]" with {_m} in {_format}
+
+	# Replace bad words
+	loop {-badwords::*}:
+		component replace loop-index with loop-value in {_format}
+	# Finally set the chat format
+	set async chat format to {_format}
+
+command /clearchat:
+	trigger:
+		loop {-signatures::*}:
+			set {_s} to loop-value
+			remove all players from {_s}
+		delete {-signatures::*}
