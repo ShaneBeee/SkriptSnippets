@@ -1,7 +1,10 @@
-# Vanilla World with Vanilla Decor
+# Mars like planet
 # By ShaneBee
 
-# This snippet shows off a world generator that may look somewhat close to vanilla Minecraft
+# This snippet shows off a world generator that is meant to resemble a red planet.
+# While it may not look much like mars, this inspiration started from mars,
+# but grew to show off different things this generator can do
+
 # Requirements: SkBee, SkNoise
 
 on load:
