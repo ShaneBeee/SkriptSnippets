@@ -1,14 +1,18 @@
-# Mars
+# Vanilla World with Vanilla Decor
 # By ShaneBee
 
-# This snippet shows off a world generator that looks like mars
-
+# This snippet shows off a world generator that may look somewhat close to vanilla Minecraft
 # Requirements: SkBee, SkNoise
 
 on load:
+	suppress variable save warning
+	# you'd have to create your own structure for this
+	# I just made a 5 block radius sphere of red terracotta
+	set {-structure::red_blob} to structure with id "minecraft:red_blob"
 	if world "world_mars" is not loaded:
 		set {_w} to world creator named "world_mars"
 		set chunk generator of {_w} to chunk generator with id "mars"
+		set environment option of {_w} to the end
 		load world from creator {_w}
 
 #! CREATE NOISE GENERATORS !#
@@ -46,10 +50,46 @@ register chunk generator with id "mars":
 				# Let's get the highest point for a block
 				set {_n} to block noise at ({_x} + (chunkdata chunk x * 16)), ({_z} + (chunkdata chunk z * 16))
 				# Now we set the blocks from 0 to our noise level filling in our world
-				set chunkdata blocks within vector({_x}, 0, {_z}) and vector({_x}, ({_n} - 1), {_z}) to red_concrete[]
+				set chunkdata blocks within vector({_x}, {_n} - 4, {_z}) and vector({_x}, ({_n} - 1), {_z}) to red_concrete[]
+				# Now we set the blocks from 0 to our noise level filling in our world
+				set chunkdata blocks within vector({_x}, 0, {_z}) and vector({_x}, ({_n} - 5), {_z}) to blackstone[]
 				# Now we set our surface layer
 				set chunkdata block at vector({_x}, {_n}, {_z}) to red_concrete_powder[]
 	biome gen:
 		# Let's give our world a lil mars lookin biome
 		set chunkdata biome to crimson forest
+	block pop:
+		chance of 15%:
+			set {_x} to random integer between 0 and 15
+			set {_z} to random integer between 0 and 15
+			set {_y} to chunkdata highest y at vector({_x}, 1, {_z})
+			set {_v} to vector({_x}, {_y}, {_z}) + vector(-5,-5,-5)
+			place chunkdata structure {-structure::red_blob} at {_v}
+		loop (random integer between 0 and 2) times:
+			set {_x} to random integer between 0 and 15
+			set {_z} to random integer between 0 and 15
+			set {_y} to chunkdata highest y at vector({_x}, 1, {_z})
+			if chance of 85%:
+				set chunkdata block at vector({_x}, {_y}, {_z}) to  crimson_nylium
+				populate crimson_fungus_tree at vector({_x}, {_y} + 1, {_z})
+			else:
+				set chunkdata block at vector({_x}, {_y}, {_z}) to  warped_nylium
+				populate warped_fungus_tree at vector({_x}, {_y} + 1, {_z})
+		loop 9 times:
+			set {_x} to random integer between 0 and 15
+			set {_z} to random integer between 0 and 15
+			set {_y} to chunkdata highest y at vector({_x}, 1, {_z})
+			if chance of 85%:
+				set chunkdata block at vector({_x}, {_y} + 1, {_z}) to  fire_coral_fan[waterlogged=false]
+			else if chance of 50%:
+				set chunkdata block at vector({_x}, {_y} + 1, {_z}) to  fire_coral[waterlogged=false]
+			else if chance of 50%:
+				set chunkdata block at vector({_x}, {_y} + 1, {_z}) to  brain_coral_fan[waterlogged=false]
+			else:
+				set chunkdata block at vector({_x}, {_y} + 1, {_z}) to  brain_coral[waterlogged=false]
 
+command /test:
+	trigger:
+		set {_l1} to location of target block
+		set {_l2} to {_l1} ~ vector(11,11,11)
+		set blocks within {_l1} and {_l2} where [input is air] to structure void
