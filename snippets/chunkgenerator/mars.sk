@@ -93,9 +93,3 @@ register chunk generator with id "mars":
 				set chunkdata block at vector({_x}, {_y} + 1, {_z}) to  brain_coral_fan[waterlogged=false]
 			else:
 				set chunkdata block at vector({_x}, {_y} + 1, {_z}) to  brain_coral[waterlogged=false]
-
-command /test:
-	trigger:
-		set {_l1} to location of target block
-		set {_l2} to {_l1} ~ vector(11,11,11)
-		set blocks within {_l1} and {_l2} where [input is air] to structure void
