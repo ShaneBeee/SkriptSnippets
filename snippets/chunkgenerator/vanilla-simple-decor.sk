@@ -18,6 +18,7 @@ on load:
 		send "&aLoaded world_vanilla_like"
 	suppress variable save warning
 	# Obviously use whatever structure you want
+	# You can find this one in the structures directory
 	set {-structure::stone_blob} to structure with id "minecraft:stone_blob"
 
 #! CREATE NOISE GENERATORS !#
