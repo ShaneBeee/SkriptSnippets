@@ -32,3 +32,13 @@ function ceilTimespan(t: timespan) :: timespan:
 			set {_a::%loop-index%} to "%ceil({_n})%"
 	set {_a} to join {_a::*} using " "
 	return {_a} parsed as timespan
+
+# Progress Bar
+# percent = percent along the bar (from 0 to 100)
+# bars = the number of bars to show
+function progress(percent: number, bars: number) :: string:
+	set {_g} to floor(({_percent} / 100) * {_bars})
+	set {_r} to {_bars} - {_g}
+	set {_g} to "&a|" repeated {_g} times if {_g} > 0 else ""
+	set {_r} to "&c|" repeated {_r} times if {_r} > 0 else ""
+	return "%{_g}%%{_r}%"
