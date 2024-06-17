@@ -22,9 +22,6 @@ on load:
 	registerBadWord("nigger", "kitty cat")
 
 on async chat:
-	if {_m} starts with "!": #Skript effect commands
-		stop
-
 	# Create our chat format
 	set {_p} to player
 	set {_t} to team prefix of team of {_p}
@@ -34,7 +31,7 @@ on async chat:
 	if world of {_p} = world "world_nether":
 		set {_w} to "&cNether"
 	set {_m::1} to text component from "&7[&c-&7]"
-	set {_m::2} to text component from "%{_t}%&b%{_p}% &7» &r"
+	set {_m::2} to text component from "%{_t}%&b%display name of {_p}% &7» &r"
 	set {_m::3} to async chat message
 
 	# Prepare signed message for deletion
