@@ -1,0 +1,28 @@
+# Explosive
+# By: ShaneBee
+
+# This snippet shows how to use a custom enchantment to create an explosive pickaxe.
+
+# Requirements: SkBee, Beer (Datapack - See ReadME), skript-reflect, Minecraft 1.21+
+
+on break:
+    if event-block is solid:
+        set {_m} to enchantment from key "beer:explosive"
+        set {_lvl} to enchantment level of {_m} of player's tool
+        if {_lvl} > 0:
+            set {_l1} to location of event-block ~ vector({_lvl},{_lvl},{_lvl})
+            set {_lvl} to {_lvl} * -1
+            set {_l2} to location of event-block ~ vector({_lvl},{_lvl},{_lvl})
+            loop blocks within {_l1} and {_l2}:
+                if all:
+                    loop-block is not event-block
+                    loop-block is solid
+                then:
+                    create fake explosion at loop-block
+                    # This requires reflect, this method breaks the block naturally but also plays the particles
+                    # You can alternatively use:
+                    # break loop-block naturally using tool of player
+                    loop-block.breakNaturally(1 of player's tool, true)
+                    damage player's tool by 1
+                    chance of 5%:
+                        set loop-block to fire

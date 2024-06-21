@@ -1,0 +1,33 @@
+# Feller
+# By: ShaneBee
+
+# This snippet shows how to use a custom enchantment to create a tree feller axe.
+
+# Requirements: SkBee, Beer (Datapack - See ReadME), skript-reflect, Minecraft 1.21+
+
+#! FUNCTIONS !#
+# This function breaks connected logs/wood
+function fell(b: block, p: player):
+    loop blocks in radius 1 around {_b}:
+        if all:
+            loop-block != {_b}
+            loop-block is any log or any wood
+            durability of tool of {_p} > 0
+            enchantment level of (enchantment from key "beer:feller") of tool of {_p} > 0
+        then:
+            # This requires reflect, this method breaks the block naturally but also plays the particles
+            # you can alternatively use:
+            # break loop-block naturally using tool of {_p}
+            loop-block.breakNaturally(1 of tool of {_p}, true)
+
+            damage tool of {_p} by 1
+            wait 1 tick
+            fell(loop-block, {_p})
+
+#! EVENTS !#
+# Handle breaking a log/wood with our enchanted item
+on break of any log or any wood:
+    set {_m} to enchantment from key "beer:feller"
+    set {_lvl} to enchantment level of {_m} of player's tool
+    if {_lvl} > 0:
+        fell(event-block, player)
