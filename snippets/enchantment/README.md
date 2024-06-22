@@ -11,6 +11,9 @@ These snippets are to showcase how to use custom enchantments in Skript.
 
 As of Minecraft 1.21, custom enchantments can be registered via datapacks.
 
+These snippets do not actually create custom enchantments, that is done in a datapack.    
+These snippets merely show off how you can manage what the enchantments do in Skript.    
+
 All of the custom enchantments here use my [**Beer**](https://github.com/ShaneBeee/Beer) datapack.      
 You can obviously make your own datapack and create your own custom enchantments.     
 This is strictly to show you the things you can do.
