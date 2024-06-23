@@ -7,27 +7,33 @@
 
 #! FUNCTIONS !#
 # This function breaks connected logs/wood
-function fell(b: block, p: player):
-    loop blocks in radius 1 around {_b}:
-        if all:
-            loop-block != {_b}
-            loop-block is any log or any wood
-            durability of tool of {_p} > 0
-            enchantment level of (enchantment from key "beer:feller") of tool of {_p} > 0
-        then:
-            # This requires reflect, this method breaks the block naturally but also plays the particles
-            # you can alternatively use:
-            # break loop-block naturally using tool of {_p}
-            loop-block.breakNaturally(1 of tool of {_p}, true)
+function fell(b: block, p: player, lvl: number, t: timespan):
+	set {_l1} to location of {_b} ~ vector(1,1,1)
+	set {_l2} to location of {_b} ~ vector(-1,-1,-1)
+	loop blocks within {_l1} and {_l2}:
+		if all:
+			loop-block != {_b}
+			loop-block is any log or any wood
+			durability of tool of {_p} > 0
+			enchantment level of (enchantment from key "beer:feller") of tool of {_p} = {_lvl}
+		then:
+			# This requires reflect, this method breaks the block naturally but also plays the particles
+			# you can alternatively use:
+			# break loop-block naturally using tool of {_p}
+			loop-block.breakNaturally(1 of tool of {_p}, true)
 
-            damage tool of {_p} by 1
-            wait 1 tick
-            fell(loop-block, {_p})
+			damage tool of {_p} by 1
+			wait {_t}
+			fell(loop-block, {_p}, {_lvl}, {_t})
 
 #! EVENTS !#
 # Handle breaking a log/wood with our enchanted item
 on break of any log or any wood:
-    set {_m} to enchantment from key "beer:feller"
-    set {_lvl} to enchantment level of {_m} of player's tool
-    if {_lvl} > 0:
-        fell(event-block, player)
+	set {_m} to enchantment from key "beer:feller"
+	set {_lvl} to enchantment level of {_m} of player's tool
+	if {_lvl} > 0:
+		# The time between block breaks is determinded by the level of enchantment
+		# The higher the level (up to 5) the faster the blocks break
+		set {_t} to (6 - {_lvl})
+		set {_t} to "%{_t}% ticks" parsed as timespan
+		fell(event-block, player, {_lvl}, {_t})
