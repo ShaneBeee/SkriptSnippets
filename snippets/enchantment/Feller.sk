@@ -23,7 +23,8 @@ function fell(b: block, p: player, lvl: number, t: timespan):
 			loop-block.breakNaturally(1 of tool of {_p}, true)
 
 			damage tool of {_p} by 1
-			wait {_t}
+			if {_t} > 0 ticks:
+				wait {_t}
 			fell(loop-block, {_p}, {_lvl}, {_t})
 
 #! EVENTS !#
@@ -33,7 +34,9 @@ on break of any log or any wood:
 	set {_lvl} to enchantment level of {_m} of player's tool
 	if {_lvl} > 0:
 		# The time between block breaks is determinded by the level of enchantment
-		# The higher the level (up to 5) the faster the blocks break
+		# The higher the level the faster the blocks break
+		# After level 5, it will break instantly
 		set {_t} to (6 - {_lvl})
 		set {_t} to "%{_t}% ticks" parsed as timespan
 		fell(event-block, player, {_lvl}, {_t})
+
