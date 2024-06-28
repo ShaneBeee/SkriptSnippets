@@ -13,7 +13,7 @@ function fell(b: block, p: player, lvl: number, t: timespan):
 	loop blocks within {_l1} and {_l2}:
 		if all:
 			loop-block != {_b}
-			loop-block is any log or any wood
+			type of loop-block is tagged as minecraft block tag "minecraft:mineable/axe"
 			durability of tool of {_p} > 0
 			enchantment level of (enchantment from key "beer:feller") of tool of {_p} = {_lvl}
 		then:
@@ -29,14 +29,14 @@ function fell(b: block, p: player, lvl: number, t: timespan):
 
 #! EVENTS !#
 # Handle breaking a log/wood with our enchanted item
-on break of any log or any wood:
-	set {_m} to enchantment from key "beer:feller"
-	set {_lvl} to enchantment level of {_m} of player's tool
-	if {_lvl} > 0:
-		# The time between block breaks is determinded by the level of enchantment
-		# The higher the level the faster the blocks break
-		# After level 5, it will break instantly
-		set {_t} to (6 - {_lvl})
-		set {_t} to "%{_t}% ticks" parsed as timespan
-		fell(event-block, player, {_lvl}, {_t})
-
+on break:
+	if type of event-block is tagged as minecraft block tag "minecraft:mineable/axe":
+		set {_m} to enchantment from key "beer:feller"
+		set {_lvl} to enchantment level of {_m} of player's tool
+		if {_lvl} > 0:
+			# The time between block breaks is determinded by the level of enchantment
+			# The higher the level the faster the blocks break
+			# After level 5, it will break instantly
+			set {_t} to (6 - {_lvl})
+			set {_t} to "%{_t}% ticks" parsed as timespan
+			fell(event-block, player, {_lvl}, {_t})
