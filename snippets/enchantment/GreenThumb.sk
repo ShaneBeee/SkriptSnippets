@@ -1,0 +1,17 @@
+# GreenThumb
+# By: ShaneBee
+
+# This snippet shows how to use a custom enchantment to create an auto crop replanter.
+
+# Requirements: SkBee, Beer (Datapack - See ReadME), Minecraft 1.21+
+on break:
+	if all:
+		type of event-block is tagged as (minecraft block tag "minecraft:crops")
+		player's tool is any hoe
+		enchantment level of (enchantment from key "beer:green_thumb") of player's tool > 0
+		age of event-block = max age of event-block
+	then:
+		set {_data} to blockdata of event-block
+		set blockdata tag "age" of {_data} to 0
+		wait 2 tick
+		set event-block to {_data}
