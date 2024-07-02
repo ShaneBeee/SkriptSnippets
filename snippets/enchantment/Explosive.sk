@@ -3,12 +3,11 @@
 
 # This snippet shows how to use a custom enchantment to create an explosive pickaxe.
 
-# Requirements: SkBee, Beer (Datapack - See ReadME), skript-reflect, Minecraft 1.21+
+# Requirements: Skript 2.9+, Beer (Datapack - See ReadME), skript-reflect, Minecraft 1.21+
 
 on break:
 	if event-block is solid:
-		set {_m} to enchantment from key "beer:explosive"
-		set {_lvl} to enchantment level of {_m} of player's tool
+		set {_lvl} to enchantment level of beer:explosive of player's tool
 		if {_lvl} > 0:
 			set {_l1} to location of event-block ~ vector({_lvl},{_lvl},{_lvl})
 			set {_lvl} to {_lvl} * -1

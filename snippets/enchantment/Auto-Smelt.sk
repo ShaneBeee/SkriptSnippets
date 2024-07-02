@@ -3,20 +3,19 @@
 
 # This snippet shows how to use a custom enchantment to create an auto smelting pickaxe.
 
-# Requirements: SkBee, Beer (Datapack - See ReadME), Minecraft 1.21+
+# Requirements: Skript 2.9+, Beer (Datapack - See ReadME), Minecraft 1.21+
 
 on break of iron ore, gold ore or copper ore:
-    set {_m} to enchantment from key "beer:auto_smelt"
-    set {_lvl} to enchantment level of {_m} of player's tool
-    if {_lvl} > 0:
-        clear drops
-        loop drops of event-block using player's tool:
-            if loop-item = raw iron:
-                add (item amount of loop-item) of iron ingot to {_i::*}
-            else if type of loop-item = 1 of raw gold:
-                add (item amount of loop-item) of gold ingot to {_i::*}
-            else if loop-item = raw copper:
-                add (item amount of loop-item) of copper ingot to {_i::*}
-            else:
-                add loop-value to {_i::*}
-        drop {_i::*} at event-block
+	set {_lvl} to enchantment level of beer:auto_smelt of player's tool
+	if {_lvl} > 0:
+		clear drops
+		loop drops of event-block using player's tool:
+			if loop-item = raw iron:
+				add (item amount of loop-item) of iron ingot to {_i::*}
+			else if type of loop-item = 1 of raw gold:
+				add (item amount of loop-item) of gold ingot to {_i::*}
+			else if loop-item = raw copper:
+				add (item amount of loop-item) of copper ingot to {_i::*}
+			else:
+				add loop-value to {_i::*}
+		drop {_i::*} at event-block

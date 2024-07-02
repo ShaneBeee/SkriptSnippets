@@ -8,8 +8,8 @@
 on break:
 	if all:
 		type of event-block is tagged as (minecraft block tag "minecraft:crops")
-		player's tool is any hoe
-		enchantment level of (enchantment from key "beer:green_thumb") of player's tool > 0
+		player's tool is tagged as minecraft item tag "minecraft:hoes"
+		enchantment level of beer:green_thumb of player's tool > 0
 		age of event-block = max age of event-block
 	then:
 		set {_data} to blockdata of event-block
