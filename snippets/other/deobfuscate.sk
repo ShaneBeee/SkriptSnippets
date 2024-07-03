@@ -1,0 +1,40 @@
+# Deobfuscate
+# By: ShaneBee
+
+# This snippet allows you to deobfuscate scripts that were obfuscated using WildSkript
+# This will be useless for most, but storing it just in case
+
+# Requirements: SkBriggy, skript-reflect
+
+#! HOW TO USE !#
+# Step 1) throw a wildskript.jar in the "plugins/skript-reflect" folder
+# (we dont want to run it as a plugin)
+
+# Step 2) Create the following folder "plugins/Skript/obfuscated/"
+# Step 3) Throw your obfuscated scripts in that folder
+
+# Step 4) Run the command:
+# file = the name of the file to deobfuscate
+# power = the power it was obfuscated with (you might have to run thru many numbers and guess)
+
+# Step 5) The resulting script will now be in the "plugins/Skript/obfuscated/output/" folder
+
+import:
+	java.io.File
+	net.dzikoysk.wildskript.collections.obfuscator.Obfuscator
+	java.io.FileWriter
+
+brig command /deobfuscate:
+	arguments:
+		register string arg "file":
+			apply suggestions {-obfuscated-files::*}
+		register int arg "power"
+	trigger:
+		set {_f} to new File("plugins/Skript/obfuscated/%{_file}%.sko")
+		set {_o} to Obfuscator.load({_f}, {_power})
+		set {_out} to new File("plugins/Skript/obfuscated/output/")
+		if {_out}.exists() = false:
+			{_out}.mkdirs()
+		set {_w} to new FileWriter("plugins/Skript/obfuscated/output/%{_file}%.sk")
+		{_w}.write({_o})
+		{_w}.close()
