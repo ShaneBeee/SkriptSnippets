@@ -42,7 +42,7 @@ on damage of player:
 on break:
 	if checkCombat(player) = true:
 		cancel event
-		send "{@prefix} &cYou cant break blocks in combat"
+		send "{@prefix} &cYou cant break blocks in combat" to player
 
 # Kill player if timer logs out
 on quit:
