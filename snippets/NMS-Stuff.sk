@@ -4,16 +4,42 @@
 # This snippet just provides some quick NMS things
 # Requirements: Skript-Reflect
 
-import:
-	net.minecraft.network.protocol.game.PacketPlayOutRespawn
-
 #! OPEN TERRAIN LOADING SCREEN !#
-# This was written for 1.20.4
-# To close just use `close inventory of player`
+# This will open the terrain loading screen to a player
+# It will automatically close after 3 seconds
+# You can manually close it by using the close inventory effect
+# Requires Paper 1.20.6+
+import:
+	net.minecraft.network.protocol.game.ClientboundRespawnPacket
+
 effect open loading terrain screen for %players%:
 	trigger:
 		loop exprs-1:
 			set {_level} to loop-value.getWorld().getHandle()
-			set {_common} to loop-value.getHandle().d({_level})
-			set {_packet} to new PacketPlayOutRespawn({_common}, 3)
-			loop-value.getHandle().c.b({_packet})
+			set {_common} to loop-value.getHandle().createCommonSpawnInfo({_level})
+			set {_packet} to new ClientboundRespawnPacket({_common}, 3)
+			loop-value.getHandle().connection.send({_packet})
+
+
+#! FULL VANILLA NBT !#
+# This expression will return vanilla item components in NBT
+# This includes all the default components an item has that doesn't normally show in NBT
+# Requires Paper 1.20.6+
+import:
+	net.minecraft.nbt.NbtOps
+	net.minecraft.core.component.DataComponentMap
+	net.minecraft.nbt.CompoundTag
+	com.shanebeestudios.skbee.api.nbt.NBTContainer
+
+expression [:full] vanilla nbt of %itemtype%:
+	get:
+		set {_i} to expr-1.getRandom().handle
+		set {_ra} to (world "world").getHandle().registryAccess()
+		set {_c} to DataComponentMap.CODEC.encode({_i}.getComponents(), {_ra}.createSerializationContext(NbtOps.INSTANCE), new CompoundTag()).getOrThrow()
+		set {_comp} to new NBTContainer({_c})
+		if parse tags contains "full":
+			set {_nbt} to full nbt of expr-1
+			set compound tag "components" of {_nbt} to {_comp}
+			return {_nbt}
+		else:
+			return {_comp}
