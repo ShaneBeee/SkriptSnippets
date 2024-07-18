@@ -26,11 +26,11 @@ function isSafeBlock(b: block) :: boolean:
 function getHighestBlock(l: location) :: location:
 	if world environment of world of {_l} = normal:
 		set {_b} to highest block at {_l}
-		if {_b} is any leaves:
+		if {_b} is tagged as minecraft block tag "minecraft:leaves":
 			loop blocks below block below {_b}:
 				if all:
 					loop-block is solid
-					loop-block is not any leaves
+					loop-block is not tagged as minecraft block tag "minecraft:leaves"
 					isSafeBlock(block above loop-block) = true
 					isSafeBlock(block 2 above loop-block) = true
 				then:
