@@ -5,7 +5,7 @@
 # While it may not look much like mars, this inspiration started from mars,
 # but grew to show off different things this generator can do
 
-# Requirements: SkBee, SkNoise
+# Requirements: SkBee, SkNoise, skript-reflect
 
 on load:
 	suppress variable save warning
@@ -15,7 +15,7 @@ on load:
 	# Wait a tick to make sure generator is properly loaded
 	# without this the spawn area doesn't generate properly (it's flat)
 	wait 1 tick
-	if world "world_mars" is not loaded:
+	if world("world_mars") is not loaded:
 		set {_w} to world creator named "world_mars"
 		set chunk generator of {_w} to chunk generator with id "mars"
 		set environment option of {_w} to the end
