@@ -4,13 +4,13 @@
 # This snippet shows off a world generator that may look somewhat close to vanilla Minecraft
 # but with simple decor
 
-# Requirements: SkBee, SkNoise
+# Requirements: SkBee, SkNoise, Skript-Reflect
 
 on load:
 	# Wait a tick to make sure generator is properly loaded
 	# without this the spawn area doesn't generate properly (it's flat)
 	wait 1 tick
-	if world "world_vanilla_like" is not loaded:
+	if world("world_vanilla_like") is not loaded:
 		send "&bLoading world_vanilla_like"
 		set {_w} to world creator named "world_vanilla_like"
 		set chunk generator of {_w} to chunk generator with id "test"
