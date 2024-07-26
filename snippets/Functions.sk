@@ -42,3 +42,23 @@ function progress(percent: number, bars: number) :: string:
 	set {_g} to "&a|" repeated {_g} times if {_g} > 0 else ""
 	set {_r} to "&c|" repeated {_r} times if {_r} > 0 else ""
 	return "%{_g}%%{_r}%"
+
+#! ITEM WITH HIDDEN ATTRIBUTE MODIFIERS !#
+# This snippet helps fix an issue relating to MC 1.20.5+
+# Requires SkBee and skript-reflect
+
+expression %itemtype% with hidden attributes:
+	get:
+		set {_i} to expr-1.getRandom()
+		set {_meta} to {_i}.getItemMeta()
+		{_meta}.addItemFlags(hide attributes)
+		set {_map} to {_i}.getType().getDefaultAttributeModifiers()
+		loop ...{_map}.keySet():
+			{_meta}.addAttributeModifier(loop-value, {_map}.get(loop-value).get(0))
+
+		{_i}.setItemMeta({_meta})
+		return {_i}
+
+# example usage
+on join:
+	give player diamond sword with hidden attributes
