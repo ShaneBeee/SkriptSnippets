@@ -1,0 +1,56 @@
+# Warps Command Tree
+# By ShaneBee
+
+# This snippet shows off a simple warp command using a command tree
+
+# Requirements: SkBriggy
+
+brig command tree /warps:
+	description: All your warpin needs!
+	# We use literal args to make sure the player can only type these options
+	literal arg "set":
+		# Each subcommand can have its own permission
+		permission: warps.set
+		string arg "warp":
+			trigger:
+				if {warps::%{_warp}%} is set:
+					send "&7[&bWarps&7] &6Warp already set &r'&c%{_warp}%&r'"
+				else:
+					set {warps::%{_warp}%} to location of player
+					send "&7[&bWarps&7] &6Created new warp &r'&b%{_warp}%&r'"
+
+	literal arg "delete":
+		permission: warps.delete
+		string arg "warp":
+			suggestions:
+				apply suggestions (indexes of {warps::*})
+			trigger:
+				if {warps::%{_warp}%} is set:
+					delete {warps::%{_warp}%}
+					send "&7[&bWarps&7] &6Deleted warp &r'&b%{_warp}%&r'"
+				else:
+					send "&7[&bWarps&7] &6Unknown warp &r'&c%{_warp}%&r'"
+
+	literal arg "warp":
+		permission: warps.warp
+		string arg "warp":
+			suggestions:
+				loop {warps::*}:
+					set {_s} to "&7x: &b%x coord of loop-value% &7y: &b%y coord of loop-value% &7z: &b%z coord of loop-value% &7world: &a%world of loop-value%"
+					apply suggestion loop-index with tooltip {_s}
+			players arg "players":
+				permission: warps.warp.other
+				trigger:
+					if {warps::%{_warp}%} is set:
+						teleport {_players::*} to {warps::%{_warp}%}
+					else:
+						send "&7[&bWarps&7] &6Unknown warp &r'&c%{_warp}%&r'"
+			trigger:
+				if {warps::%{_warp}%} is set:
+					teleport player to {warps::%{_warp}%}
+				else:
+					send "&7[&bWarps&7] &6Unknown warp &r'&c%{_warp}%&r'"
+
+
+
+
