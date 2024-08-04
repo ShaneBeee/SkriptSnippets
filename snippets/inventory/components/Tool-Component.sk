@@ -1,0 +1,23 @@
+# Tool Component
+# By: ShaneBee
+
+# This snippet shows examples of applying tool properties to items
+# Requirements: SkBee 3.5.10+
+
+on load:
+	# Create a stick tool that matches a Diamond Pickaxe
+	set {-items::stick_pickaxe} to 1 of stick
+	set component custom item name of {-items::stick_pickaxe} to mini message from "Stickaxe"
+	set max stack size component of {-items::stick_pickaxe} to 1
+	set max damage of {-items::stick_pickaxe} to 1561
+	set damage of {-items::stick_pickaxe} to 0
+	apply tool component to {-items::stick_pickaxe}:
+		damage per block: 1
+		rules:
+			apply tool rule:
+				correct for drops: false
+				block tag: minecraft block tag "minecraft:incorrect_for_diamond_tool"
+			apply tool rule:
+				correct for drops: true
+				speed: 8.0
+				block tag: minecraft block tag "minecraft:mineable/pickaxe"

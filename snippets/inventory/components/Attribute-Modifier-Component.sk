@@ -1,0 +1,28 @@
+# Apply Attribute Modifiers to Items
+# By: ShaneBee
+
+# This snippet shows examples of applying attribute modifiers to items
+# Requirements: SkBee 3.5.9+
+
+on load:
+    set {-items::gravity_boots} to 1 of netherite boots with nbt from "{""minecraft:item_name"":'{""text"":""Gravity Boots""}'}"
+    apply attribute modifier to {-items::gravity_boots}:
+        id: "my_mods:gravity"
+        attribute: gravity
+        amount: -0.05
+        operation: add_number
+        slot: feet_slot_group
+
+    apply attribute modifier to {-items::gravity_boots}:
+        id: "my_mods:fall_scale"
+        attribute: fall damage multiplier
+        amount: -0.5
+        operation: add_number
+        slot: feet_slot_group
+
+    apply attribute modifier to {-items::gravity_boots}:
+        id: "my_mods:safe_fall"
+        attribute: safe fall distance
+        amount: 12
+        operation: add_number
+        slot: feet_slot_group

@@ -1,0 +1,14 @@
+# Food Component
+# By: ShaneBee
+
+# This snippet shows examples of applying food properties to items
+# Requirements: SkBee 3.5.10+
+
+on load:
+	# Create a new food item
+	set {-items::yummy_stick} to 1 of stick with nbt from "{""minecraft:item_name"":'{""text"":""Yummy Stick""}'}"
+	apply food component to {-items::yummy_stick}:
+		nutrition: 3
+		saturation: 1
+		effects:
+			apply potion effect of strength of tier 2 without particles for 1 minute
