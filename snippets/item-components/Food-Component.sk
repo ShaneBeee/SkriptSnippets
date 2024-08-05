@@ -28,6 +28,6 @@ on load:
 			apply potion effect of hunger without particles for 10 seconds with probability 0.3
 
 	register smoking recipe:
-		id: "skbee:roasted_flesh"
+		id: "my_recipes:roasted_flesh"
 		result: {-items::roasted_flesh}
 		input: rotten flesh
