@@ -4,11 +4,30 @@
 # This snippet shows examples of applying food properties to items
 # Requirements: SkBee 3.5.10+
 
+# Example creating a simple food item out of a stick
 on load:
-	# Create a new food item
 	set {-items::yummy_stick} to 1 of stick with nbt from "{""minecraft:item_name"":'{""text"":""Yummy Stick""}'}"
 	apply food component to {-items::yummy_stick}:
 		nutrition: 3
 		saturation: 1
 		effects:
 			apply potion effect of strength of tier 2 without particles for 1 minute
+
+# Example creating a food item with custom model data and a recipe
+on load:
+	set {_i} to rotten flesh with custom model data 10881
+	set component custom item name of {_i} to mini message from "Roasted Flesh"
+	set max stack size component of {_i} to 16
+
+	apply food component to {_i}:
+		saturation: 1
+		nutrition: 7
+		effects:
+			apply potion effect of nausea without particles for 10 seconds with probability 0.8
+			apply potion effect of poison without particles for 3 seconds with probability 0.2
+			apply potion effect of hunger without particles for 10 seconds with probability 0.3
+
+	register smoking recipe:
+		id: "skbee:roasted_flesh"
+		result: {_i}
+		input: rotten flesh
