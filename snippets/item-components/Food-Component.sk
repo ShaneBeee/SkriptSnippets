@@ -15,11 +15,11 @@ on load:
 
 # Example creating a food item with custom model data and a recipe
 on load:
-	set {_i} to rotten flesh with custom model data 10881
-	set component custom item name of {_i} to mini message from "Roasted Flesh"
-	set max stack size component of {_i} to 16
+	set {-items::roasted_flesh} to rotten flesh with custom model data 10881
+	set component custom item name of {-items::roasted_flesh} to mini message from "Roasted Flesh"
+	set max stack size component of {-items::roasted_flesh} to 16
 
-	apply food component to {_i}:
+	apply food component to {-items::roasted_flesh}:
 		saturation: 1
 		nutrition: 7
 		effects:
@@ -29,5 +29,5 @@ on load:
 
 	register smoking recipe:
 		id: "skbee:roasted_flesh"
-		result: {_i}
+		result: {-items::roasted_flesh}
 		input: rotten flesh
