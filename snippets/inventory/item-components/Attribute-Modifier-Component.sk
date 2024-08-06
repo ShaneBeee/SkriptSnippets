@@ -2,7 +2,8 @@
 # By: ShaneBee
 
 # This snippet shows examples of applying attribute modifiers to items
-# Requirements: SkBee 3.5.9+
+# Requirements: SkBee 3.5.9+, Minecraft 1.21+
+# (If you wanna test these on Minecraft 1.20.x and below, remove ID and use name/uuid instead)
 
 on load:
     set {-items::gravity_boots} to 1 of netherite boots with nbt from "{""minecraft:item_name"":'{""text"":""Gravity Boots""}'}"
