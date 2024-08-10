@@ -2,7 +2,7 @@
 # By: ShaneBee
 
 # This snippet shows examples of applying food properties to items
-# Requirements: SkBee 3.5.10+
+# Requirements: SkBee 3.6.0+
 
 # Example creating a simple food item out of a stick
 on load:

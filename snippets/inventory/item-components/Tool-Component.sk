@@ -2,7 +2,7 @@
 # By: ShaneBee
 
 # This snippet shows examples of applying tool properties to items
-# Requirements: SkBee 3.5.10+
+# Requirements: SkBee 3.6.0+
 
 on load:
 	# Create a stick tool that matches a Diamond Pickaxe
