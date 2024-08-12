@@ -2,32 +2,42 @@
 # By: ShaneBee
 
 # This little script provides the player with a simple little backpack
-# Requirements: SkBee
+# Requirements: SkBee 3.6.0+
 
 #! FUNCTIONS !#
 # Open the backpack to the player
 function openBackpack(p: player):
+
 	set {-backpack::%uuid of {_p}%::slot} to index of current hotbar slot of {_p}
-	set {_n} to nbt compound of tool of {_p}
+	set {_n} to custom nbt of tool of {_p}
 	set {_g} to chest inventory with 3 rows named "&bBackpack"
 	set {_items::*} to compound list tag "Backpack;Items" of {_n}
 	loop {_items::*}:
-		set {_s} to int tag "Slot" of loop-value
+		set {_s} to byte tag "Slot" of loop-value
 		set {_i} to nbt item from loop-value
 		set slot {_s} of {_g} to {_i}
 	open {_g} to {_p}
+	wait 1 tick
+	seeBarrier({_p})
 
 # Save backpack to item
 function saveBackpack(p: player):
-	set {_n} to nbt of tool of {_p}
+	set {_n} to custom nbt of tool of {_p}
 	loop items in current inventory of {_p}:
 		set {_s} to index of loop-slot
 		set {_i} to full nbt of loop-slot
-		set tag "Slot" of {_i} to {_s}
+		set byte tag "Slot" of {_i} to {_s}
 		add {_i} to {_items::*}
 	set {_size} to size of {_items::*}
 	set compound list tag "Backpack;Items" of {_n} to {_items::*}
 	set lore of tool of {_p} to "&7Items: &b%{_size}%&f/&b27"
+
+# Make the player see their held item as a barrier
+function seeBarrier(p: player):
+	set {_i} to 1 of barrier
+	hide tooltip of {_i}
+	make {_p} see hand slot of {_p} as {_i}
+
 
 #! EVENT LISTENERS !#
 # handle saving when the inventory is closed
@@ -36,18 +46,30 @@ on inventory close:
 		delete {-backpack::%uuid of player%::slot}
 		saveBackpack(player)
 
-# prevent player putting their backpack in their backpack
+# Handle backpack clicks while in backpack inventory
 on inventory click:
+	# prevent player putting their backpack in their backpack
 	if clicked inventory = player's inventory:
 		if index of clicked slot = {-backpack::%uuid of player%::slot}:
 			cancel event
+			wait 1 tick
+			seeBarrier(player)
+	# Prevent player clicking number button to move backpack
+	if all:
+		name of current inventory of player = "&bBackpack"
+		click type = number key
+		hotbar button = {-backpack::%uuid of player%::slot}
+	then:
+		cancel event
+		wait 1 tick
+		seeBarrier(player)
 
 # open the backpack (hand only)
 on right click:
-	if nbt of player's tool has tag "Backpack":
+	if custom nbt of player's tool has tag "Backpack":
 		cancel event
 		openBackpack(player)
-	else if nbt of player's offhand tool has tag "Backpack":
+	else if custom nbt of player's offhand tool has tag "Backpack":
 		cancel event
 
 # delete unwanted variable
@@ -56,7 +78,7 @@ on quit:
 
 # create backpack item
 on load:
-	set {-backpack} to player head with nbt from "{Backpack:[],SkullOwner:{Id:[I;-896627500,-420264509,-1649306860,408140238],Properties:{textures:[{Value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWNlODMzYWE5YTI4YmNmMjA3ZTViMzZhNTkxY2VmMWY5OTdkZDJmNGE0YTIzNmFmNTBkZDA4MWYzYTVkOWM0YyJ9fX0=""}]}}}"
+	set {-backpack} to player head with nbt from "{""minecraft:custom_data"":{Backpack:[]},""minecraft:profile"":{id:[I;-896627500,-420264509,-1649306860,408140238],name:"""",properties:[{name:""textures"",value:""eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZWNlODMzYWE5YTI4YmNmMjA3ZTViMzZhNTkxY2VmMWY5OTdkZDJmNGE0YTIzNmFmNTBkZDA4MWYzYTVkOWM0YyJ9fX0=""}]}}"
 	set name of {-backpack} to "&bBackpack"
 	set lore of {-backpack} to "&7Items: &b0&f/&b27"
 
