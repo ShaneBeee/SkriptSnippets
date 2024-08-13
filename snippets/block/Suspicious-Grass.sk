@@ -1,0 +1,70 @@
+# Suspicious Grass
+# By: ShaneBee
+
+# This little snippet shows an example of making other blocks act similar to suspicious sand/gravel.
+# Requirements: SkBee, Minecraft 1.19.4+
+
+# Get direction for item to animate out of block
+function getDirection(face: blockface) :: vector:
+	if {_face} = up_face:
+		return vector(0,0.1,0)
+	else if {_face} = east_face:
+		return vector(0.1,0,0)
+	else if {_face} = west_face:
+		return vector(-0.1,0,0)
+	else if {_face} = south_face:
+		return vector(0,0,0.1)
+	else if {_face} = north_face:
+		return vector(0,0,-0.1)
+
+on right click on grass block holding a brush:
+	if {-brushing::%player%} is not set:
+		set {_block} to event-block
+		set {_face} to event-blockface
+		set {_vec} to getDirection({_face})
+		set {-brushing::%player%} to true
+
+		# Setup item to drop
+		if nbt of {_block} has tag "custom;archaeology;item":
+			set {_item} to nbt item from compound tag "custom;archaeology;item" of nbt of {_block}
+		else:
+			if chance of 10%:
+				set {_table} to loottable from key "minecraft:archaeology/trail_ruins_rare"
+			else:
+				set {_table} to loottable from key "minecraft:archaeology/trail_ruins_common"
+			set {_item} to random element of (looted items from {_table})
+			set compound tag "custom;archaeology;item" of nbt of {_block} to full nbt of {_item}
+		spawn item display at {_block}:
+			set display item of entity to {_item}
+			set teleport duration of entity to 30
+			if {_face} = north_face or south_face:
+				set yaw of entity to 90
+			set display brightness of entity to displayBrightness(15,15)
+			set display scale of entity to vector(0.65,0.65,0.65)
+			set {_e} to entity
+			set {_origin} to location of {_e}
+
+		# Item animation
+		while {-brushing::%player%} is true:
+			set {_dist} to distance between {_e} and {_origin}
+			make player see damage of {_block} as ({_dist}/2)
+			set {_l} to location of {_e} ~ {_vec}
+			teleport {_e} to {_l}
+			if {_dist} > 0.97:
+				set {_canDrop} to true
+				exit loop
+			wait 10 ticks
+
+		# Prepare drop or reset
+		make player see damage of {_block} as 0
+		if {_canDrop} = true:
+			delete tag "custom;archaeology" of nbt of {_block}
+			drop 1 of {_item} at {_l}
+			set block at {_block} to coarse dirt
+		else:
+			teleport {_e} to {_origin}
+			wait 30 ticks
+		kill {_e}
+
+on player stop using item:
+	delete {-brushing::%player%}
