@@ -3,7 +3,7 @@
 
 # This snippet shows how to use a custom enchantment to create a tree feller axe.
 
-# Requirements: Skript 2.9+, SkBee, Beer (Datapack - See ReadME), skript-reflect, Minecraft 1.21+
+# Requirements: Skript 2.9+, SkBee, Beer (Datapack - See ReadME), Minecraft 1.21+
 
 #! FUNCTIONS !#
 # This function breaks connected logs/wood
@@ -13,17 +13,14 @@ function fell(b: block, p: player, lvl: number, t: timespan):
 	loop blocks within {_l1} and {_l2}:
 		if all:
 			loop-block != {_b}
-			#loop-block is any log or any wood
-			type of loop-block is tagged as minecraft block tag "minecraft:mineable/axe"
+			type of loop-block is tagged as minecraft block tag "minecraft:logs"
 			durability of tool of {_p} > 0
 			enchantment level of beer:feller of tool of {_p} = {_lvl}
 		then:
-			# This requires reflect, this method breaks the block naturally but also plays the particles
-			# you can alternatively use:
-			# break loop-block naturally using tool of {_p}
-			loop-block.breakNaturally(1 of tool of {_p}, true)
+			break loop-block with effects and with xp using tool of {_p}
 
-			damage tool of {_p} by 1
+			if gamemode of {_p} = survival or adventure:
+				damage tool of {_p} by 1
 			if {_t} > 0 ticks:
 				wait {_t}
 			fell(loop-block, {_p}, {_lvl}, {_t})
@@ -31,7 +28,7 @@ function fell(b: block, p: player, lvl: number, t: timespan):
 #! EVENTS !#
 # Handle breaking a log/wood with our enchanted item
 on break:
-	if type of event-block is tagged as minecraft block tag "minecraft:mineable/axe":
+	if type of event-block is tagged as minecraft block tag "minecraft:logs":
 		set {_lvl} to enchantment level of beer:feller of player's tool
 		if {_lvl} > 0:
 			# The time between block breaks is determinded by the level of enchantment
