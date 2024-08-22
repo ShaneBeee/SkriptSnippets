@@ -62,3 +62,18 @@ expression %itemtype% with hidden attributes:
 # example usage
 on join:
 	give player diamond sword with hidden attributes
+
+#! FORMATTED TIMESPAN !#
+# this will format a timespan like 1d, 3h, 10m, 1s
+# Modify to your loking
+
+function time(time: timespan) :: string:
+	set {_time} to "%{_time}%"
+	replace " and " with ", " in {_time}
+	replace " days" and " day" with "d" in {_time}
+	replace " hours" and " hour" with "h" in {_time}
+	replace " minutes" and " minute" with "m" in {_time}
+	replace " seconds" and " second" with "s" in {_time}
+	set {_time} to {_time}.replaceAll("\.\d+", "")
+
+	return {_time}
