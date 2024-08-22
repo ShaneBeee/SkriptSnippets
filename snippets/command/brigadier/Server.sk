@@ -1,0 +1,36 @@
+# Server Selector Command
+
+# This little snippet shows a command for transfering player's to other servers
+# You register the name of all your servers and plop this on all servers
+# The current server will not show up
+
+# This uses Minecraft's transfer system, this is NOT for bungee/velocity!
+
+# Requirements: SkBee, Minecraft 1.20.5+, SkBriggy
+
+function registerServer(port: number, name: string, tooltip: string):
+	if {-port} = {_port}:
+		stop
+	set {-servers::%{_name}%} to {_port}
+	set {-servers::%{_name}%::tooltip} to {_tooltip}
+
+on load:
+	set {-port} to server.getServer().getPort()
+	registerServer(25565, "hub", "The main server")
+	registerServer(25566, "fun", "The fun server")
+	registerServer(25567, "test", "Invalid test server")
+
+brig command tree /server:
+	string arg "server":
+		suggestions:
+			loop {-servers::*}:
+				apply suggestion loop-index with tooltip {-servers::%loop-index%::tooltip}
+		optional players arg "players":
+			trigger:
+				if {-servers::%{_server}%} is not set:
+					send "&7[&bServers&7] &cInvalid server: &e%{_server}%"
+					stop
+				set {_players::*} to {_players::*} ? player
+				send "&7[&bServers&7] &6Transferring to server: &a%{_server}%" to {_players::*}
+				wait 1 second
+				transfer {_players::*} to server "localhost" on port {-servers::%{_server}%}
