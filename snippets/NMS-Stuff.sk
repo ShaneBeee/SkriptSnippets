@@ -47,6 +47,7 @@ expression [:full] vanilla nbt of %itemtype%:
 #! VANILLA MINECRAFT NBT OF CHUNK !#
 # This will return the nbt of a chunk how Minecraft would save a chunk
 # This differs from SkBee's `nbt of %chunk%` as it will provide all data in a chunk
+# You can read more about the chunk nbt format at https://minecraft.wiki/w/Chunk_format
 # Requires Paper 1.20.6+, SkBee
 import:
 	net.minecraft.world.level.chunk.status.ChunkStatus
