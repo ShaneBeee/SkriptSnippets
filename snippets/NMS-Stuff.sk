@@ -24,7 +24,7 @@ effect open loading terrain screen for %players%:
 #! FULL VANILLA NBT !#
 # This expression will return vanilla item components in NBT
 # This includes all the default components an item has that doesn't normally show in NBT
-# Requires Paper 1.20.6+
+# Requires Paper 1.20.6+, SkBee
 import:
 	net.minecraft.nbt.NbtOps
 	net.minecraft.core.component.DataComponentMap
@@ -43,3 +43,21 @@ expression [:full] vanilla nbt of %itemtype%:
 			return {_nbt}
 		else:
 			return {_comp}
+
+#! VANILLA MINECRAFT NBT OF CHUNK !#
+# This will return the nbt of a chunk how Minecraft would save a chunk
+# This differs from SkBee's `nbt of %chunk%` as it will provide all data in a chunk
+# Requires Paper 1.20.6+, SkBee
+import:
+	net.minecraft.world.level.chunk.status.ChunkStatus
+	net.minecraft.world.level.chunk.storage.ChunkSerializer
+	com.shanebeestudios.skbee.api.nbt.NBTContainer
+
+expression minecraft nbt of %chunk%:
+	get:
+		set {_chunk} to expr-1
+		set {_nmsChunk} to {_chunk}.getHandle(ChunkStatus.FULL)
+		set {_level} to {_chunk}.worldServer
+		set {_nmsNBT} to ChunkSerializer.write({_level}, {_nmsChunk})
+		set {_nbt} to new NBTContainer({_nmsNBT})
+		return {_nbt}
