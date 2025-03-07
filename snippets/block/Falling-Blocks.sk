@@ -1,0 +1,57 @@
+# Falling Blocks
+# By: ShaneBee
+
+# This little snippet shows an example of making other blocks fall like sand/gravel
+# Currently setup for leaves/logs/grass_block/dirt
+# Requirements: SkBee, Minecraft 1.19.4+
+
+options:
+	# The max distance a loop will check for falling blocks
+	# Higher numbers can be more performance heavy
+	max_fall_check: 10
+
+function isFallable(b: block) :: boolean:
+	set {_type} to type of {_b}
+	if any:
+		type of {_b} is tagged as block tag "logs"
+		type of {_b} is tagged as block tag "leaves"
+		type of {_b} is grass block or dirt
+	then:
+		return true
+	else:
+		return false
+
+function fall(b: block):
+	set {_data} to block data of {_b}
+	set block at {_b} to air
+	le spawn falling {_data} at location 0.5 below {_b}
+
+function updateAbove(b: block):
+	wait 2 ticks
+	if isFallable(block above {_b}) = true:
+		updateNeighbour({_b}, 0)
+		set {_b} to block above {_b}
+		fall({_b})
+		updateAbove({_b})
+
+function updateNeighbour(b: block, dist: number):
+	if {_dist} > {@max_fall_check}:
+		stop
+	wait 2 ticks
+	add 1 to {_dist}
+	updateAbove({_b})
+	loop blocks in radius 1 around {_b}:
+		if all:
+			y coord of {_b} = y coord of loop-block
+			isFallable(loop-block) = true
+			block below loop-block is not solid
+		then:
+			fall(loop-block)
+			updateNeighbour(loop-block, {_dist})
+			updateAbove(loop-block)
+
+on break:
+	updateNeighbour(event-block, 0)
+
+on place:
+	updateNeighbour(event-block, 0)
