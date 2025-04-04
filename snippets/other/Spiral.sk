@@ -34,10 +34,10 @@ on load:
 #! GET LOC FROM NBT FUNCTION !#
 # this just gets a location from NBT you wont need to worry about this
 function getLoc(n: nbt compound) :: location:
-	set {_x} to tag "x" of {_n}
-	set {_y} to tag "y" of {_n}
-	set {_z} to tag "z" of {_n}
-	set {_ws} to tag "world" of {_n}
+	set {_x} to int tag "x" of {_n}
+	set {_y} to int tag "y" of {_n}
+	set {_z} to int tag "z" of {_n}
+	set {_ws} to string tag "world" of {_n}
 	set {_w} to world({_ws})
 	set {_l} to location({_x}, {_y}, {_z}, {_w})
 	return {_l}
@@ -50,7 +50,7 @@ function saveLoc(l: location) :: nbt compound:
 	set int tag "y" of {_n} to y coord of {_l}
 	set int tag "z" of {_n} to z coord of {_l}
 	set {_w} to "%world of {_l}%"
-	set tag "world" of {_n} to {_w}
+	set string tag "world" of {_n} to {_w}
 	return {_n}
 
 #! MAIN SPIRAL FUNCTION !#
@@ -59,9 +59,9 @@ function saveLoc(l: location) :: nbt compound:
 function getNext() :: location:
 	set {_lastLoc} to compound tag "lastLoc" of {spiral::nbt}
 	set {_loc} to getLoc({_lastLoc})
-	set {_gape} to tag "gape" of {spiral::nbt}
-	set {_pos} to tag "pos" of {spiral::nbt}
-	set {_vec} to tag "vec" of {spiral::nbt}
+	set {_gape} to int tag "gape" of {spiral::nbt}
+	set {_pos} to int tag "pos" of {spiral::nbt}
+	set {_vec} to byte tag "vec" of {spiral::nbt}
 	set {_loc} to {_loc} ~ {-dir::%{_vec}%}
 	add 1 to {_pos}
 	if {_pos} >= {_gape}:
