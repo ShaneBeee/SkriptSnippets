@@ -1,7 +1,8 @@
 # Blue Planet
 
 I've split this one up into 2 snippets to make things a bit cleaner:
-- `blue-planet-biomes.sk` = This snippet holds the custom biomes for our generator
+- `blue-planet-biomes.sk` = This snippet holds the custom biomes for our generator, these biomes are made with [SkNMS](https://modrinth.com/plugin/sknms).  
+You can also create custom biomes in a datapack.
 - `blue-planet-gen.sk` = The generator itself
 
 ## Pictures:
