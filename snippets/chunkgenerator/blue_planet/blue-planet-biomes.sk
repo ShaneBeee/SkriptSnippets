@@ -1,0 +1,78 @@
+# Blue colored planet
+# By ShaneBee
+
+# This snippet includes custom biomes for a blue colored planet
+# Kept it simple with blue_plains and a blue_forest
+# You can expand to your hearts desire
+
+# Requirements: SkBee, SkNMS
+
+#! REGISTER CUSTOM BIOMES !#
+registry registration:
+	register new biome:
+		id: "my_biomes:blue_plains"
+		has_precipitation: true
+		temperature: 0.8
+		downfall: 0.2
+		effects:
+			fog_color: 12638463
+			sky_color: 7907327
+			foliage_color: rgb(37, 245, 201)
+			water_color: rgb(37, 211, 245)
+			water_fog_color: 2302743
+			grass_color: rgb(129, 206, 249)
+		tags:
+			apply to tag "minecraft:has_structure/village_plains"
+		spawners:
+			creature:
+				apply spawner for cow, sheep and pig with weight 10 and with min count 2 and max count 4
+		features:
+			underground_ores:
+				apply feature "minecraft:ore_dirt"
+				apply feature "minecraft:ore_coal_upper"
+				apply feature "minecraft:ore_coal_lower"
+				apply feature "minecraft:disk_sand"
+				apply feature "minecraft:disk_clay"
+				apply feature "minecraft:disk_gravel"
+			vegetal_decoration:
+				apply feature "minecraft:flower_plains"
+				apply feature "minecraft:patch_grass_plain"
+				apply feature "minecraft:patch_waterlily"
+				apply feature "minecraft:patch_sugar_cane"
+	register new biome:
+		id: "my_biomes:blue_forest"
+		has_precipitation: true
+		temperature: 0.8
+		downfall: 0.2
+		effects:
+			fog_color: 12638463
+			sky_color: 7907327
+			foliage_color: rgb(37, 245, 201)
+			water_color: rgb(37, 211, 245)
+			water_fog_color: 2302743
+			grass_color: rgb(43, 171, 196)
+		tags:
+			apply to tag "minecraft:has_structure/village_plains"
+		spawners:
+			creature:
+				apply spawner for cow, sheep and pig with weight 10 and with min count 2 and max count 4
+		features:
+			underground_ores:
+				apply feature "minecraft:ore_dirt"
+				apply feature "minecraft:ore_coal_upper"
+				apply feature "minecraft:ore_coal_lower"
+				apply feature "minecraft:disk_sand"
+				apply feature "minecraft:disk_clay"
+				apply feature "minecraft:disk_gravel"
+			vegetal_decoration:
+				apply feature "minecraft:glow_lichen"
+				apply feature "minecraft:forest_flowers"
+				apply feature "minecraft:trees_birch_and_oak_leaf_litter"
+				apply feature "minecraft:patch_bush"
+				apply feature "minecraft:flower_default"
+				apply feature "minecraft:patch_grass_forest"
+				apply feature "minecraft:brown_mushroom_normal"
+				apply feature "minecraft:red_mushroom_normal"
+				apply feature "minecraft:patch_pumpkin"
+				apply feature "minecraft:patch_sugar_cane"
+				apply feature "minecraft:patch_firefly_bush_near_water"

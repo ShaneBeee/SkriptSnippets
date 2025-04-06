@@ -1,0 +1,34 @@
+# Blue colored planet
+# By ShaneBee
+
+# This snippet includes generation for a blue colored planet
+# Biomes are from the 'blue-planet-biomes.sk' snippet
+
+# Requirements: SkBee 3.10+
+
+#! LOAD WORLD FROM GENERATOR !#
+on load:
+	# Wait a tick to make sure generator is properly loaded
+	# without this the spawn area doesn't generate properly (it's flat)
+	wait 1 tick
+	if world("world_blue_planet") is not loaded:
+		set {_w} to world creator named "world_blue_planet"
+		set chunk generator of {_w} to chunk generator with id "blue_planet"
+		load world from creator {_w}
+
+#! REGISTER GENERATOR !#
+register chunk generator with id "blue_planet":
+	vanilla caves: true
+	vanilla decor: true
+	vanilla structures: true
+	biome gen:
+	    # We allow vanilla chunk generation
+	    # So we grab the generator's noise points and create biomes based on that
+		set {_param} to biome parameter point
+
+		# Simple method to split the world up
+		# Weirdness often borders biomes nicely with rivers
+		if fixed biome weirdness of {_param} > 0:
+			set chunkdata biome to my_biomes:blue_plains
+		else:
+			set chunkdata biome to my_biomes:blue_forest
