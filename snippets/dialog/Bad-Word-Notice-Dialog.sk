@@ -1,0 +1,25 @@
+# Bad World Notice
+# By: ShaneBee
+
+# This is a simple dialog popup when a player says a bad word.
+
+# Do note, this is not intended for production, only for educational purposes
+
+# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+
+registry registration:
+	register notice dialog:
+		id: "custom:bad_words"
+		title: "Chat Monitor"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><red>You said a bad word, please dont!"
+
+on load:
+	set {-badwords::*} to "shit", "fuck" and "cooked"
+
+on chat:
+	loop {-badwords::*}:
+		if message contains loop-value:
+			cancel event
+			open dialog with id "custom:bad_words" to player

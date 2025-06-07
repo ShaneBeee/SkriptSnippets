@@ -1,0 +1,52 @@
+# Rule Agreement
+# By: ShaneBee
+
+# This is a simple rule agreement for when players join.
+
+# Do note, this is not intended for production, only for educational purposes
+
+# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+
+registry registration:
+	register multi action dialog:
+		id: "custom:join_rules"
+		title: "Server Rules"
+		can_close_with_escape: false
+		columns: 1
+		body:
+			add plain message body:
+				contents: mini message from "<bold>Please read our server rules!"
+			add plain message body:
+				contents: "Rules:"
+			# SETUP RULES
+			add "1) Be nice" to {_rules::*}
+			add "2) Don't break other people's stuff" to {_rules::*}
+			add "3) No bad language" to {_rules::*}
+			set {_rules} to mini message from (join {_rules::*} using "<newline>")
+			add plain message body:
+				contents: {_rules}
+		inputs:
+			add text input:
+				key: "name_input"
+				label: "Input your name to confirm:"
+				initial: "name"
+		actions:
+			add dynamic action button:
+				label: mini message from "Agree"
+				tooltip: mini message from "By clicking this I agree to the server rules."
+				id: "custom:accept_rules"
+			add dynamic action button:
+				label: mini message from "Disconnect"
+				tooltip: mini message from "I'd rather leave!"
+				id: "custom:decline_rules"
+
+on join:
+	open dialog with id "custom:join_rules" to player
+
+on dynamic button click:
+	if "%event-namespacedkey%" contains "custom:accept_rules":
+		if event-string doesn't contain player's name: #need to change when NBT is available
+			open dialog with id "custom:join_rules" to player
+	if "%event-namespacedkey%" contains "custom:decline_rules":
+		kick player due to "&cYou have declined our rules!"
+
