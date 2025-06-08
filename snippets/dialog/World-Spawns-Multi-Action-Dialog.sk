@@ -1,0 +1,33 @@
+# World Spawns
+# By: ShaneBee
+
+# This is a simple world spawn dialog.
+
+# Do note, this is not intended for production, only for educational purposes
+
+# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+
+registry registration:
+	register multi action dialog:
+		id: "custom:worlds"
+		title: "World Spawns"
+		can_close_with_escape: true
+		columns: 1
+		body:
+			add plain message body:
+				contents: "Choose a world to teleport to!"
+		actions:
+			loop all worlds:
+				set {_name} to "%loop-value%"
+				replace "_" with " " in {_name}
+				set {_name} to proper case {_name}
+				add static action button:
+					label: {_name}
+					action: click event to run command "/world %loop-value%"
+
+command /world [<world>]:
+	trigger:
+		if arg-1 is not set:
+			open dialog with id "custom:worlds" to player
+		else:
+			teleport player to spawn of arg-1
