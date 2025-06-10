@@ -1,0 +1,52 @@
+# Ban Menu
+# By: ShaneBee
+
+# This is a simple ban menu with several inputs.
+
+# Do note, this is not intended for production, only for educational purposes
+
+# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+
+command /leban <string>:
+	trigger:
+		set {_p} to arg-1
+		open multi action dialog to player:
+			title: "Ban Menu"
+			body:
+				add plain message body:
+					contents: "Ban &b%{_p}%"
+				add item body:
+					item: 1 of mace
+					show_tooltip: false
+			inputs:
+				add number range input:
+					key: "number_range"
+					label: "Time"
+					start: 0
+					end: 100
+					step: 1
+					initial: 0
+				add single option input:
+					key: "span_input"
+					label: "Span"
+					options:
+						add options entry:
+							id: "minutes"
+							display: "minutes"
+						add options entry:
+							id: "hours"
+							display: "hours"
+						add options entry:
+							id: "days"
+							display: "Days"
+				add text input:
+					key: "reason_input"
+					label: "Reason:"
+					max_length: 100
+			actions:
+				add dynamic action button:
+					label: "Ban!"
+					id: "custom:ban_player"
+					additions: nbt from "{to_ban:""%{_p}%""}"
+
+# TODO listener (once NBT is ready)

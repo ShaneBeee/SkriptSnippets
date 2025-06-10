@@ -1,0 +1,30 @@
+# Server Links
+# By: ShaneBee
+
+# This is a simple dialog that will give the player a few links that are important to the server.
+
+# Do note, this is not intended for production, only for educational purposes
+
+# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+
+registry registration:
+	register multi action dialog with id "custom:server_links":
+		title: "Server Links"
+		columns: 1
+		body:
+			add plain message body:
+				contents: "Some links for our server!"
+		actions:
+			add static action button:
+				label: "Google"
+				action: click event to open url "https://google.com"
+			add static action button:
+				label: "Discord"
+				action: click event to open url "https://discord.com"
+			add static action button:
+				label: "Forums"
+				action: click event to open url "https://your-forum-link.com"
+
+command /serverlinks:
+	trigger:
+		open dialog with id "custom:server_links" to player
