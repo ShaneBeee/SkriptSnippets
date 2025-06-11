@@ -22,3 +22,4 @@ on chat:
 						contents: mini message from "<bold><red>You said a bad word!!!"
 					add plain message body:
 						contents: mini message from "<grey>Please don't say <white>""<yellow>%{_v}%<white>"""
+			exit loop

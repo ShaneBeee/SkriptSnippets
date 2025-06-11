@@ -8,8 +8,7 @@
 # Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
 
 registry registration:
-	register multi action dialog:
-		id: "custom:join_rules"
+	register multi action dialog with id "custom:join_rules":
 		title: "Server Rules"
 		can_close_with_escape: false
 		columns: 1
@@ -45,8 +44,7 @@ on join:
 
 on dynamic button click:
 	if "%event-namespacedkey%" contains "custom:accept_rules":
-		if event-string doesn't contain player's name: #need to change when NBT is available
+		if string tag "name_input" of event-nbtcompound != player's name:
 			open dialog with id "custom:join_rules" to player
 	if "%event-namespacedkey%" contains "custom:decline_rules":
 		kick player due to "&cYou have declined our rules!"
-

@@ -8,8 +8,7 @@
 # Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
 
 registry registration:
-	register multi action dialog:
-		id: "custom:worlds"
+	register multi action dialog with id "custom:worlds":
 		title: "World Spawns"
 		can_close_with_escape: true
 		columns: 1

@@ -7,20 +7,28 @@
 
 # Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
 
-command /leban <string>:
+command /leban [<player>]:
 	trigger:
-		set {_p} to arg-1
+		set {_p} to name of arg-1
 		open multi action dialog to player:
 			title: "Ban Menu"
 			body:
-				add plain message body:
-					contents: "Ban &b%{_p}%"
+				if {_p} is set:
+					add plain message body:
+						contents: "Ban &b%{_p}%"
+				else:
+					add plain message body:
+						contents: "Ban a player"
 				add item body:
 					item: 1 of mace
 					show_tooltip: false
 			inputs:
+				if {_p} is not set:
+					add text input:
+						key: "to_ban"
+						label: "Player to ban:"
 				add number range input:
-					key: "number_range"
+					key: "time_input"
 					label: "Time"
 					start: 0
 					end: 100
@@ -32,21 +40,43 @@ command /leban <string>:
 					options:
 						add options entry:
 							id: "minutes"
-							display: "minutes"
+							display: "Minutes"
 						add options entry:
 							id: "hours"
-							display: "hours"
+							display: "Mours"
 						add options entry:
 							id: "days"
 							display: "Days"
+						add options entry:
+							id: "permanent"
+							display: "&cPermanent"
 				add text input:
 					key: "reason_input"
 					label: "Reason:"
 					max_length: 100
 			actions:
-				add dynamic action button:
-					label: "Ban!"
-					id: "custom:ban_player"
-					additions: nbt from "{to_ban:""%{_p}%""}"
+				if {_p} is set:
+					add dynamic action button:
+						label: "Ban %{_p}%!"
+						id: "custom:ban_player"
+						additions: nbt from "{to_ban:""%{_p}%""}"
+				else:
+					add dynamic action button:
+						label: "Ban!"
+						id: "custom:ban_player"
 
-# TODO listener (once NBT is ready)
+on dynamic action button click:
+	if "%event-namespacedkey%" = "custom:ban_player":
+		set {_n} to event-nbtcompound
+		set {_time} to float tag "time_input" of {_n}
+		set {_span} to (string tag "span_input" of {_n}) parsed as timespan period
+		set {_timespan} to timespan({_time}, {_span})
+		set {_reason} to "&c" + string tag "reason_input" of {_n}
+		set {_p} to offlineplayer(string tag "to_ban" of {_n})
+		if {_span} is set:
+			broadcast "BAN: %{_reason}% // %{_timespan}%"
+			ban {_p} due to {_reason} for {_timespan}
+			kick {_p} due to ("&cTemporary Ban%nl%&eReason: " + {_reason} + "%nl%&eLength: %{_timespan}%")
+		else:
+			ban {_p} due to {_reason}
+			kick {_p} due to ("&cPermanent Ban%nl%&eReason: " + {_reason})

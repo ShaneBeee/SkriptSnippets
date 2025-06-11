@@ -8,18 +8,17 @@
 # Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
 
 registry registration:
-	register multi action dialog:
-		id: "custom:gamemodes"
+	register multi action dialog with id "custom:gamemodes":
 		title: "Gamemode"
 		can_close_with_escape: true
-		columns: 2
+		columns: 1
 		body:
 			add plain message body:
 				contents: "Choose a gamemode"
 		actions:
 			loop all gamemodes:
 				add static action button:
-					label: "%loop-value%"
+					label: translate component from "gameMode.%loop-value%"
 					action: click event to run command "/gm %loop-value%"
 
 command /gm [<gamemode>]:
