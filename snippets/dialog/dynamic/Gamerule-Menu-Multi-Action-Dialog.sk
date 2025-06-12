@@ -1,0 +1,140 @@
+# Gamerule Menu
+# By: ShaneBee
+
+# This is a dialog that allows you to visual/manage gamerules.
+# This one is extremely janky, but it was fun to write.
+
+# Do note, this is not intended for production, only for educational purposes
+
+# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+
+on load:
+	# this is used to sort gamerules alphabetically
+	suppress variable save warning
+	loop all gamerules:
+		set {-gamerules::%loop-value%} to loop-value
+
+function gamerulesDialog(p: player):
+	set {_w} to world of {_p}
+	open multi action dialog to {_p}:
+		title: "&bGamerules"
+		columns: 3
+		body:
+			add plain message body:
+				contents: "Select a gamerule"
+		actions:
+			loop {-gamerules::*}:
+				if loop-value.requiredFeatures().isEmpty() = false:
+					continue
+				set {_g} to loop-value
+				set {_value::*} to (gamerule {_g} of (world of {_p}))
+				set {_value} to {_value::1}.getGameruleValue()
+				if {_value} = true:
+					set {_c} to "&a"
+				else if {_value} = false:
+					set {_c} to "&c"
+				else:
+					set {_c} to "&b"
+
+				add dynamic action button:
+					label: {_c} + "%loop-value%"
+					id: "custom:open_gamerule_menu"
+					additions: nbt from "{gamerule:%loop-value%}"
+
+
+function gameruleDialog(g: gamerule, p: player):
+	open multi action dialog to {_p}:
+		title: "&bGamerule"
+		columns: 1
+		body:
+			add plain message body:
+				contents: "Gamerule: %{_g}%"
+		inputs:
+			set {_value::*} to (gamerule {_g} of (world of {_p}))
+			set {_value} to {_value::1}.getGameruleValue()
+			if "%{_g}.getType()%" contains "Boolean":
+				set {_color} to "&a" if {_value} = true else "&c"
+				add boolean input:
+					label: "Enabled"
+					key: "value"
+					initial: {_value}
+			else:
+				add number range input:
+					label: "Value"
+					key: "value"
+					start: 0
+					end: 100
+					step: 1
+					initial: {_value}
+
+		actions:
+			add dynamic action button:
+				label: "Set"
+				id: "gamerule_set"
+				additions: nbt from "{gamerule:%{_g}%}"
+			add dynamic action button:
+				label: "Back"
+				id: "custom:open_gamerules_menu"
+
+function gameruleConfirm(g: gamerule, v: object, p: player):
+	if {_v} is set:
+		open multi action dialog to {_p}:
+			title: "Gamerule Confirmation"
+			columns: 1
+			body:
+				add plain message body:
+					contents: "Gamerule: %{_g}%"
+				add plain message body:
+					contents: "Value Set: %{_v}%"
+			actions:
+				add static action button:
+					label: "Exit"
+				add dynamic action button:
+					label: "Gamerules"
+					id: "custom:open_gamerules_menu"
+	else:
+		open multi action dialog to {_p}:
+			title: "Gamerule Confirmation"
+			columns: 1
+			body:
+				add plain message body:
+					contents: "Gamerule: %{_g}%"
+				add plain message body:
+					contents: "&cFailed to set value!"
+			actions:
+				add static action button:
+					label: "Exit"
+				add dynamic action button:
+					label: "Gamerules"
+					id: "custom:open_gamerules_menu"
+
+
+command /gm [<gamerule>]:
+	trigger:
+		if arg-1 is not set:
+			gamerulesDialog(player)
+		else:
+			gameruleDialog(arg-1, player)
+
+on dynamic button click:
+	set {_key} to "%event-namespacedkey%"
+	if {_key} = "custom:open_gamerules_menu":
+		gamerulesDialog(player)
+	else if {_key} = "custom:open_gamerule_menu":
+		set {_n} to event-nbt
+		set {_gamerule} to (string tag "gamerule" of {_n}) parsed as gamerule
+		gameruleDialog({_gamerule}, player)
+	else if {_key} contains "gamerule_set":
+		set {_n} to event-nbt
+		set {_gamerule} to string tag "gamerule" of {_n} parsed as gamerule
+		if tag type of tag "value" of {_n} is byte tag:
+			set {_value} to (boolean tag "value" of {_n})
+			set gamerule {_gamerule} of world of player to (boolean tag "value" of {_n})
+		else if tag type of tag "value" of {_n} is float tag:
+			set {_value} to (float tag "value" of {_n}).intValue()
+
+		if {_value} is set:
+			set gamerule {_gamerule} of world of player to {_value}
+			gameruleConfirm({_gamerule}, {_value}, player)
+		else:
+			gameruleConfirm({_gamerule}, {_}, player)
