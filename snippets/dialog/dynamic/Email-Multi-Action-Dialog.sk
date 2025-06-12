@@ -30,7 +30,7 @@ function openEmailMenu(p: player):
 
 				set {_u} to "  "
 				if {_n} has tag "read":
-					set {_c} to "&7"
+					set {_c} to raw "<gray>"
 				else:
 					set {_c} to raw "<#68FAA6>"
 					if boolean tag "email_urgent" of {_n} = true:
