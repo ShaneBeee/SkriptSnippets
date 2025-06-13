@@ -1,0 +1,190 @@
+# Shop Menu
+# By: ShaneBee
+
+# This is a shop menu dialog scrip.
+# It was made to easy change to meet your needs
+
+# Do note, this is not intended for production, only for educational purposes
+
+# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+
+function registerShopItem(group: string, i: itemtype, price: number, name: string = ""):
+	set {-shop::%{_group}%} to {_group}
+	set {-shop::%{_group}%::%{_i}%} to {_i}
+	set {-shop::%{_group}%::%{_i}%::price} to {_price}
+	if length of {_name} > 0:
+		set {-shop::%{_group}%::%{_i}%::name} to {_name}
+
+on load:
+	# Natural
+	delete {-shop::*}
+	registerShopItem("natural", dirt, 1)
+	registerShopItem("natural", gravel, 5)
+	registerShopItem("natural", grass block, 20)
+
+	# Logs
+	loop tag values of item tag "minecraft:logs":
+		registerShopItem("logs", loop-value, 10)
+
+	# Wool
+	loop tag values of item tag "minecraft:wool":
+		registerShopItem("wool", loop-value, 3)
+
+	# Spawn Eggs
+	loop tag values of item tag "paper:spawn_eggs":
+		registerShopItem("spawn eggs", loop-value, 5000)
+
+	# Minerals
+	registerShopItem("mineral", gold ingot, 25)
+	registerShopItem("mineral", iron ingot, 50)
+	registerShopItem("mineral", diamond, 100)
+	registerShopItem("mineral", emerald, 500)
+
+	# Tools
+	registerShopItem("tools", iron axe, 100)
+	registerShopItem("tools", iron pickaxe, 100)
+	registerShopItem("tools", diamond axe, 500)
+	registerShopItem("tools", diamond pickaxe, 500)
+
+function openItemMenu(player: player, group: string, itemstring: string):
+	set {_item} to {-shop::%{_group}%::%{_itemstring}%}
+	if {-shop::%{_group}%::%{_itemstring}%::name} is set:
+		set {_itemname} to {-shop::%{_group}%::%{_itemstring}%::name}
+	else:
+		set {_itemname} to translate component of {_item}
+	set {_price} to {-shop::%{_group}%::%{_itemstring}%::price}
+	open multi action dialog to {_player}:
+		title: "Shop"
+		columns: 1
+		body:
+			add plain message body:
+				contents: "Shopping for " + {_itemname}
+			add plain message body:
+				contents: "&7Price per: &b$%{_price}%"
+			add item body:
+				item: {_item}
+		inputs:
+			add number range input:
+				key: "amount"
+				label: "Amount"
+				start: 1
+				end: max stack size of {_item}
+				step: 1
+				initial: 1
+		actions:
+			set {_n} to empty nbt compound
+			set string tag "group" of {_n} to {_group}
+			set string tag "item" of {_n} to {_itemstring}
+			add dynamic action button:
+				label: "Buy"
+				id: "shop:buy_item"
+				additions: {_n}
+			add dynamic action button:
+				label: "&eBack"
+				id: "shop:group_menu"
+				additions: {_n}
+
+function confirmBuy(player: player, item: itemtype, price: number, nbt: nbtcompound):
+	open confirmation dialog to {_player}:
+		title: "Shop"
+		body:
+			set {_name} to translate component of {_item}
+			add plain message body:
+				contents: "Do you want to buy %{_name}% for &b$%{_price}%?"
+		actions:
+			add dynamic action button:
+				label: "&aCONFIRM"
+				id: "shop:confirm_buy"
+				additions: {_nbt}
+			add dynamic action button:
+				label: "&cCANCEL"
+				id: "shop:open_shop_menu"
+
+function cantAfford(player: player, item: itemtype, price: number):
+	open notice dialog to {_player}:
+		title: "Shop"
+		body:
+			set {_name} to translate component of {_item}
+			add plain message body:
+				contents: "You dont have enough money to buy %{_name}%"
+			add plain message body:
+				contents: "You need &b$%{_price}% &rbut you only have &e%balance of {_player}%"
+		action:
+			add dynamic action button:
+				label: "&eShop Menu"
+				id: "shop:open_shop_menu"
+
+
+function openGroupMenu(player: player, group: string):
+	open multi action dialog to {_player}:
+		title: "Shop"
+		body:
+			add plain message body:
+				contents: (proper case {_group}) + " Shop"
+		actions:
+			loop {-shop::%{_group}%::*}:
+				if {-shop::%{_group}%::%loop-index%::name} is set:
+					set {_t} to {-shop::%{_group}%::%loop-index%::name}
+				else:
+					set {_t} to translate component of loop-value
+				set {_price} to {-shop::%{_group}%::%loop-index%::price}
+				set {_lines::*} to tooltip lines of loop-value
+				set {_lines} to merge components {_lines::*} with new line
+				set {_n} to empty nbt compound
+				set string tag "group" of {_n} to {_group}
+				set string tag "item" of {_n} to loop-index
+				add dynamic action button:
+					label: "%{_t}% &b$%{_price}%"
+					id: "shop:item_button"
+					tooltip: {_lines}
+					additions: {_n}
+			add dynamic action button:
+				label: "&eBack"
+				id: "shop:open_shop_menu"
+
+function openShopMenu(player: player):
+	open multi action dialog to {_player}:
+		title: "Shop"
+		body:
+			add plain message body:
+				contents: "Select a shop:"
+		actions:
+			loop {-shop::*}:
+				add dynamic action button:
+					label: proper case loop-value
+					id: "shop:group_menu"
+					additions: nbt from "{group:""%loop-value%""}"
+
+command /shop:
+	trigger:
+		openShopMenu(player)
+
+on dynamic button click:
+	set {_key} to "%event-namespacedkey%"
+	if {_key} = "shop:open_shop_menu":
+		openShopMenu(player)
+	else if {_key} = "shop:group_menu":
+		set {_group} to string tag "group" of event-nbt
+		openGroupMenu(player, {_group})
+	else if {_key} = "shop:item_button":
+		set {_group} to string tag "group" of event-nbt
+		set {_item} to string tag "item" of event-nbt
+		openItemMenu(player, {_group}, {_item})
+	else if {_key} = "shop:buy_item":
+		set {_group} to string tag "group" of event-nbt
+		set {_item} to string tag "item" of event-nbt
+		set {_amount} to float tag "amount" of event-nbt
+		set {_item2} to {-shop::%{_group}%::%{_item}%}
+		set {_price} to {-shop::%{_group}%::%{_item}%::price} * {_amount}
+		if balance of player >= {_price}:
+			confirmBuy(player, {_item2}, {_price}, event-nbt)
+		else:
+			cantAfford(player, {_item2}, {_price})
+	else if {_key} = "shop:confirm_buy":
+		set {_group} to string tag "group" of event-nbt
+		set {_item} to string tag "item" of event-nbt
+		set {_amount} to float tag "amount" of event-nbt
+		set {_item2} to {-shop::%{_group}%::%{_item}%}
+		set {_price} to {-shop::%{_group}%::%{_item}%::price} * {_amount}
+		give player {_amount} of {_item2}
+		remove {_price} from balance of player
