@@ -174,7 +174,6 @@ function sendEmail(from: player, email: nbt compound):
 	if {_p} is online:
 		send "&7[&bEmail&7] &rYou received a new email from %{_from}%... <cmd:/email open>&bOPEN EMAILS!" to {_p}
 
-
 command /email [<string>] [<offlineplayer>]:
 	trigger:
 		if arg-1 = "send":
@@ -192,12 +191,13 @@ on tab complete of "email":
 	set tab completions for position 1 to "open", "send"
 
 on dynamic button click:
-	if "%event-namespacedkey%" = "email:send_email":
+	set {_key} to "%event-namespacedkey%"
+	if {_key} = "email:send_email":
 		set {_n} to event-nbt
 		sendEmail(player, {_n})
-	else if "%event-namespacedkey%" = "email:create_email":
+	else if {_key} = "email:create_email":
 		createEmail(player)
-	else if "%event-namespacedkey%" = "email:create_email_to":
+	else if {_key} = "email:create_email_to":
 		set {_n} to event-nbt
 		set {_to} to offlineplayer(string tag "to" of {_n})
 		if all:
@@ -207,23 +207,23 @@ on dynamic button click:
 			writeEmail(player, {_to})
 		else:
 			noPlayer(player, {_to})
-	else if "%event-namespacedkey%" = "email:reply":
+	else if {_key} = "email:reply":
 		set {_n} to event-nbt
 		set {_to} to offlineplayer(uuid tag "to" of {_n})
 		writeEmail(player, {_to})
-	else if "%event-namespacedkey%" = "email:open_email":
+	else if {_key} = "email:open_email":
 		set {_id} to string tag "id" of event-nbt
 		openEmail(player, {_id})
-	else if "%event-namespacedkey%" = "email:open_emails":
+	else if {_key} = "email:open_emails":
 		openEmailMenu(player)
-	else if "%event-namespacedkey%" = "email:delete":
+	else if {_key} = "email:delete":
 		set {_id} to string tag "id" of event-nbt
 		delete {emails::%uuid of player%::%{_id}%}
 		openEmailMenu(player)
-	else if "%event-namespacedkey%" = "email:mark_unread":
+	else if {_key} = "email:mark_unread":
 		set {_id} to string tag "id" of event-nbt
 		delete tag "read" of {emails::%uuid of player%::%{_id}%}
 		openEmailMenu(player)
-	else if "%event-namespacedkey%" = "email:delete_all":
+	else if {_key} = "email:delete_all":
 		delete {emails::%uuid of player%::*}
 		openEmailMenu(player)
