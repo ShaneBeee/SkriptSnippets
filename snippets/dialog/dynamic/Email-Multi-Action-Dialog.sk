@@ -82,7 +82,7 @@ function openEmail(player: player, id: string):
 			set {_idNBT} to empty nbt compound
 			set string tag "id" of {_idNBT} to {_id}
 
-			# MARK UNBREAK
+			# MARK UNREAD
 			add dynamic action button:
 				label: "&bMark Unread"
 				id: "email:mark_unread"
