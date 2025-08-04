@@ -2,12 +2,13 @@
 # By: ShaneBee
 
 # This little script provides the player with a simple little backpack
+# Do note this snippet is not intended to be production ready it is merely an example
+# Last tested on Paper/MC 1.21.8, Skript 2.12.1 and SkBee 3.12.2 and works as expected
 # Requirements: SkBee 3.6.0+
 
 #! FUNCTIONS !#
 # Open the backpack to the player
 function openBackpack(p: player):
-
 	set {-backpack::%uuid of {_p}%::slot} to index of current hotbar slot of {_p}
 	set {_n} to custom nbt of tool of {_p}
 	set {_g} to chest inventory with 3 rows named "&bBackpack"
