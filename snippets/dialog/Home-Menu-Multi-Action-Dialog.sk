@@ -1,0 +1,58 @@
+# Home Menu
+# By: ShaneBee
+
+# This is a simple home menu with action buttons for each home.
+
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
+
+# Do note, this is not intended for production, only for educational purposes
+
+command /home:
+	trigger:
+		if {homes::%uuid of player%::*} is not set:
+			send "&cYou have no homes!"
+			stop
+		set {_p} to player
+		open multi action dialog to player:
+			title: mini message from "<gradient:#0ABAF7:#0AF718>Home Menu"
+			body:
+				add plain message body:
+					contents: "&b&l&nSelect a home to teleport to:"
+			actions:
+				loop {homes::%uuid of {_p}%::*}:
+					set {_loc} to loop-value
+					add callback action button:
+						label: "%loop-index%"
+						trigger:
+							teleport {_p} to {_loc}
+
+command /sethome <string>:
+	trigger:
+		set {_home} to arg-1
+		replace " " with "_" in {_home}
+		if {homes::%uuid of player%::%{_home}%} is set:
+			send "&7[&bHomes&7] &eHome &r'&b%{_home}%&r' &eis already set, use &r'&b/delhome&r' &eto delete it first."
+		else:
+			set {homes::%uuid of player%::%{_home}%} to location of player
+			send "&7[&bHomes&7] &eSet home &r'&b%{_home}%&r' &eto your location!"
+
+command /delhome:
+	trigger:
+		set {_p} to player
+		open multi action dialog to player:
+			title: mini message from "<gradient:#0ABAF7:#0AF718>Home Menu"
+			body:
+				add plain message body:
+					contents: "&b&l&nSelect a home to delete:"
+			actions:
+				loop {homes::%uuid of {_p}%::*}:
+					set {_home} to loop-index
+					add callback action button:
+						label: "&c%{_home}%"
+						trigger:
+							delete {homes::%uuid of {_p}%::%{_home}%}
+							send "&7[&bHomes&7] &eDeleted home &r'&b%{_home}%&r'" to {_p}
+
+
+
+

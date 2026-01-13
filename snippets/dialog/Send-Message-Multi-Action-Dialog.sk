@@ -1,0 +1,25 @@
+# Send Message Dialog
+# By: ShaneBee
+
+# This is a simple dialog popup that allows players to send messages
+
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
+
+# Do note, this is not intended for production, only for educational purposes
+
+command /message:
+	trigger:
+		open multi action dialog to player:
+			title: "Send a message:"
+			inputs:
+				add text input:
+					key: "name_input"
+					label: "Player Name"
+				add text input:
+					key: "text_input"
+					label: "Message to send"
+			actions:
+				add dynamic run command action button:
+					label: "Send Message"
+					width: 100
+					template: "/msg $(name_input) $(text_input)"

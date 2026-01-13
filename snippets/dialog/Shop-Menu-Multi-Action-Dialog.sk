@@ -4,9 +4,9 @@
 # This is a shop menu dialog scrip.
 # It was made to easy change to meet your needs
 
-# Do note, this is not intended for production, only for educational purposes
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
 
-# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+# Do note, this is not intended for production, only for educational purposes
 
 function registerShopItem(group: string, i: itemtype, price: number, name: string = ""):
 	set {-shop::%{_group}%} to {_group}
@@ -159,7 +159,7 @@ command /shop:
 	trigger:
 		openShopMenu(player)
 
-on dynamic button click:
+on custom click:
 	set {_key} to "%event-namespacedkey%"
 	if {_key} = "shop:open_shop_menu":
 		openShopMenu(player)

@@ -1,0 +1,53 @@
+# Server Rules Agreement
+# By: ShaneBee
+
+# This is a simple rule agreement for when players join.
+# This allows you to lock the player in the joining screen until they accept
+
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
+
+# Do note, this is not intended for production, only for educational purposes
+
+on load:
+	# Setup server rules
+	add "1) Be nice" to {_rules::*}
+	add "2) Don't break other people's stuff" to {_rules::*}
+	add "3) No bad language" to {_rules::*}
+	set {-server_rules} to mini message from (join {_rules::*} using "<newline>")
+
+function openDialog(p: audience):
+	open multi action dialog to {_p}:
+		title: "Server Rules"
+		can_close_with_escape: false
+		columns: 1
+		body:
+			add plain message body:
+				contents: mini message from "<bold>Please read our server rules!"
+			add plain message body:
+				contents: "Rules:"
+			add plain message body:
+				contents: {-server_rules}
+		inputs:
+			add text input:
+				key: "name_input"
+				label: "Input your name to confirm:"
+				initial: "name"
+		actions:
+			add callback action button:
+				label: "Accept"
+				trigger:
+					if string tag "name_input" of event-nbt = event-string:
+						unfreeze connection event-playerconnection
+					else:
+						openDialog(event-audience)
+			add callback action button:
+				label: "Decline"
+				trigger:
+					unfreeze connection event-playerconnection and disconnect due to mini message from "<red>Ok fine... bye!"
+
+on async player connection configure:
+	# open rules dialog
+	openDialog(event-audience)
+
+	# Freeze the connection and wait for the player to respond
+	freeze connection event-playerconnection

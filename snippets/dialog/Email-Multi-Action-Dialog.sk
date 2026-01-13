@@ -5,9 +5,9 @@
 # This allows players to send emails to each other.
 # They have the option to read, delete, mark unread, reply.
 
-# Do note, this is not intended for production, only for educational purposes
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
 
-# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+# Do note, this is not intended for production, only for educational purposes
 
 function openEmailMenu(p: player):
 	open multi action dialog to {_p}:
@@ -26,7 +26,7 @@ function openEmailMenu(p: player):
 				set {_from} to offlineplayer(uuid tag "from" of {_n})
 				set {_id} to loop-value
 				set {_date} to unix date of ({_id} parsed as number)
-				set {_tooltip} to string tag "email_subject" of {_n}
+				set {_subject} to string tag "email_subject" of {_n}
 
 				set {_u} to "  "
 				if {_n} has tag "read":
@@ -37,18 +37,21 @@ function openEmailMenu(p: player):
 						set {_u} to raw "<#F99803>ℹ"
 						set {_c} to raw "<#4EF903>"
 
-				add dynamic action button:
+				add callback action button:
 					label: mini message from "%{_u}% %{_c}%From: %{_from}% Date: %{_date}%"
-					tooltip: "Subject: " + {_tooltip}
-					id: "email:open_email"
-					additions: nbt from "{id:""%{_id}%""}"
+					tooltip: "Subject: " + {_subject}
 					width: 275
-			add dynamic action button:
+					trigger:
+						openEmail(player, {_id})
+			add callback action button:
 				label: "&cDelete All"
-				id: "email:delete_all"
-			add dynamic action button:
+				trigger:
+					delete {emails::%uuid of player%::*}
+					openEmailMenu(player)
+			add callback action button:
 				label: "&bCreate Email"
-				id: "email:create_email"
+				trigger:
+					createEmail(player)
 			add static action button:
 				label: "&eExit"
 
@@ -74,30 +77,31 @@ function openEmail(player: player, id: string):
 			set {_reply} to empty nbt compound
 			set uuid tag "from" of {_reply} to (uuid of {_player})
 			set uuid tag "to" of {_reply} to {_fromUUID}
-			add dynamic action button:
+			add callback action button:
 				label: "Reply"
-				id: "email:reply"
-				additions: {_reply}
-
-			set {_idNBT} to empty nbt compound
-			set string tag "id" of {_idNBT} to {_id}
+				trigger:
+					set {_to} to offlineplayer({_fromUUID})
+					writeEmail(player, {_to})
 
 			# MARK UNREAD
-			add dynamic action button:
+			add callback action button:
 				label: "&bMark Unread"
-				id: "email:mark_unread"
-				additions: {_idNBT}
+				trigger:
+					delete tag "read" of {emails::%uuid of player%::%{_id}%}
+					openEmailMenu(player)
 
 			# DELETE
-			add dynamic action button:
+			add callback action button:
 				label: "&cDelete"
-				id: "email:delete"
-				additions: {_idNBT}
+				trigger:
+					delete {emails::%uuid of player%::%{_id}%}
+					openEmailMenu(player)
 
 			# EMAILS
-			add dynamic action button:
+			add callback action button:
 				label: "Emails"
-				id: "email:open_emails"
+				trigger:
+					openEmailMenu(player)
 
 			# EXIT
 			add static action button:
@@ -114,25 +118,36 @@ function createEmail(from: player):
 				label: "Player Name:"
 				key: "to"
 		actions:
-			add dynamic action button:
+			add callback action button:
 				label: "Create"
-				id: "email:create_email_to"
+				trigger:
+					set {_n} to event-nbt
+					set {_name} to string tag "to" of event-nbt
+					set {_to} to offlineplayer({_name}, false)
+					if all:
+						{_to} is set
+						player != {_to}
+					then:
+						writeEmail(player, {_to})
+					else:
+						noPlayer(player, {_name})
 
-function noPlayer(player: player, to: offlineplayer):
+function noPlayer(player: player, to: string):
 	open multi action dialog to {_player}:
 		title: "<bold>Email"
 		columns: 1
 		body:
-			if {_player} = {_to}:
+			if name of {_player} = {_to}:
 				add plain message body:
 					contents: "&cYou cannot email yourself"
 			else:
 				add plain message body:
 					contents: "&cNo player by the name &e%{_to}%"
 		actions:
-			add dynamic action button:
+			add callback action button:
 				label: "Emails"
-				id: "email:open_emails"
+				trigger:
+					openEmailMenu(player)
 			add static action button:
 				label: "Exit"
 
@@ -156,13 +171,13 @@ function writeEmail(from: player, to: offlineplayer):
 				label: "Urgent?"
 				key: "email_urgent"
 		actions:
-			set {_n} to empty nbt compound
-			set uuid tag "to" of {_n} to uuid of {_to}
-			set uuid tag "from" of {_n} to uuid of {_from}
-			add dynamic action button:
+			add callback action button:
 				label: "Send"
-				id: "email:send_email"
-				additions: {_n}
+				trigger:
+					set {_n} to event-nbt
+					set uuid tag "to" of {_n} to uuid of {_to}
+					set uuid tag "from" of {_n} to uuid of {_from}
+					sendEmail(player, {_n})
 
 function sendEmail(from: player, email: nbt compound):
 	set {_fromuuid} to uuid of {_from}
@@ -174,56 +189,21 @@ function sendEmail(from: player, email: nbt compound):
 	if {_p} is online:
 		send "&7[&bEmail&7] &rYou received a new email from %{_from}%... <cmd:/email open>&bOPEN EMAILS!" to {_p}
 
-command /email [<string>] [<offlineplayer>]:
+command /email [<string>] [<string>]:
 	trigger:
 		if arg-1 = "send":
+			set {_to} to offlineplayer(arg-2, false)
 			if any:
-				player = arg-2
-				arg-2 has not played before
+				player = {_to}
+				{_to} is not set
 			then:
 				noPlayer(player, arg-2)
 			else:
-				writeEmail(player, arg-2)
+				writeEmail(player, {_to})
 		else:
 			openEmailMenu(player)
 
 on tab complete of "email":
 	set tab completions for position 1 to "open", "send"
-
-on dynamic button click:
-	set {_key} to "%event-namespacedkey%"
-	if {_key} = "email:send_email":
-		set {_n} to event-nbt
-		sendEmail(player, {_n})
-	else if {_key} = "email:create_email":
-		createEmail(player)
-	else if {_key} = "email:create_email_to":
-		set {_n} to event-nbt
-		set {_to} to offlineplayer(string tag "to" of {_n})
-		if all:
-			{_to} has played before
-			player != {_to}
-		then:
-			writeEmail(player, {_to})
-		else:
-			noPlayer(player, {_to})
-	else if {_key} = "email:reply":
-		set {_n} to event-nbt
-		set {_to} to offlineplayer(uuid tag "to" of {_n})
-		writeEmail(player, {_to})
-	else if {_key} = "email:open_email":
-		set {_id} to string tag "id" of event-nbt
-		openEmail(player, {_id})
-	else if {_key} = "email:open_emails":
-		openEmailMenu(player)
-	else if {_key} = "email:delete":
-		set {_id} to string tag "id" of event-nbt
-		delete {emails::%uuid of player%::%{_id}%}
-		openEmailMenu(player)
-	else if {_key} = "email:mark_unread":
-		set {_id} to string tag "id" of event-nbt
-		delete tag "read" of {emails::%uuid of player%::%{_id}%}
-		openEmailMenu(player)
-	else if {_key} = "email:delete_all":
-		delete {emails::%uuid of player%::*}
-		openEmailMenu(player)
+	if tab arg-1 = "send":
+		set tab completions for position 2 to all players

@@ -1,0 +1,49 @@
+
+# Warp Menu
+# By: ShaneBee
+
+# This is a simple warp menu with action buttons for each warp.
+
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
+
+# Do note, this is not intended for production, only for educational purposes
+
+command /warp:
+	trigger:
+		open multi action dialog to player:
+			title: mini message from "<gradient:#0ABAF7:#0AF718>Warp Menu"
+			body:
+				add plain message body:
+					contents: "&b&l&nSelect a warp to teleport to:"
+			actions:
+				loop {warps::*}:
+					set {_w} to loop-index
+					set {_l} to loop-value
+					add callback action button:
+						label: "&a%{_w}%"
+						trigger:
+							teleport player to {_l}
+
+command /setwarp <string>:
+	trigger:
+		set {_w} to arg-1
+		replace " " with "_" in {_w}
+		set {warps::%{_w}%} to location of player
+		send "&7[&bWarps&7] &rYou have set warp &7'&a%{_w}%&7' &rto your location"
+
+command /delwarp:
+	trigger:
+		open multi action dialog to player:
+			title: mini message from "<gradient:#0ABAF7:#0AF718>Warp Menu"
+			body:
+				add plain message body:
+					contents: "&b&l&nSelect a warp to delete:"
+			actions:
+				loop {warps::*}:
+					set {_w} to loop-index
+					set {_l} to loop-value
+					add callback action button:
+						label: "&c%{_w}%"
+						trigger:
+							delete {warps::%{_w}%}
+							send "&7[&bWarps&7] &rYou have delete warp &7'&a%{_w}%&7'"

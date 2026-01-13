@@ -1,0 +1,30 @@
+# Weather Changer
+# By: ShaneBee
+
+# This is a simple weather changer script.
+
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
+
+# Do note, this is not intended for production, only for educational purposes
+
+command /leweather:
+	trigger:
+		open multi action dialog to player:
+			title: "Weather Selector"
+			columns: 1
+			body:
+				add plain message body:
+					contents: "Select the weather for your world:"
+			actions:
+				add callback action button:
+					label: "Sunny"
+					trigger:
+						set weather of world of player to sunny
+				add callback action button:
+					label: "Rainy"
+					trigger:
+						set weather of world of player to rain
+				add callback action button:
+					label: "Storm"
+					trigger:
+						set weather of world of player to thunder

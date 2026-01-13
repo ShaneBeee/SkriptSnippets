@@ -4,9 +4,9 @@
 # This is a dialog that allows you to visual/manage gamerules.
 # This one is extremely janky, but it was fun to write.
 
-# Do note, this is not intended for production, only for educational purposes
+# Requirements: SkBee 3.16.0+, Skript-Reflect, Paper 1.21.7+
 
-# Requirements: SkBee, SkNMS 1.3.0+, Paper 1.21.6+
+# Do note, this is not intended for production, only for educational purposes
 
 on load:
 	# this is used to sort gamerules alphabetically
@@ -14,11 +14,18 @@ on load:
 	loop all gamerules:
 		set {-gamerules::%loop-value%} to loop-value
 
+command /gm [<gamerule>]:
+	trigger:
+		if arg-1 is not set:
+			gamerulesDialog(player)
+		else:
+			gameruleDialog(arg-1, player)
+
 function gamerulesDialog(p: player):
 	set {_w} to world of {_p}
 	open multi action dialog to {_p}:
 		title: "&bGamerules"
-		columns: 3
+		columns: 2
 		body:
 			add plain message body:
 				contents: "Select a gamerule"
@@ -36,11 +43,16 @@ function gamerulesDialog(p: player):
 				else:
 					set {_c} to "&b"
 
-				add dynamic action button:
-					label: {_c} + "%loop-value%"
-					id: "custom:open_gamerule_menu"
-					additions: nbt from "{gamerule:%loop-value%}"
+				set {_name} to "%{_g}%"
+				replace "minecraft:" with "" in {_name}
+				replace "_" with " " in {_name}
+				set {_name} to proper case {_name}
 
+				add dynamic action button:
+					label: {_c} + {_name}
+					id: "custom:open_gamerule_menu"
+					additions: nbt from "{gamerule:""%loop-value%""}"
+					width: 200
 
 function gameruleDialog(g: gamerule, p: player):
 	open multi action dialog to {_p}:
@@ -52,6 +64,7 @@ function gameruleDialog(g: gamerule, p: player):
 		inputs:
 			set {_value::*} to (gamerule {_g} of (world of {_p}))
 			set {_value} to {_value::1}.getGameruleValue()
+			broadcast "Value: %{_value}%"
 			if "%{_g}.getType()%" contains "Boolean":
 				set {_color} to "&a" if {_value} = true else "&c"
 				add boolean input:
@@ -63,7 +76,7 @@ function gameruleDialog(g: gamerule, p: player):
 					label: "Value"
 					key: "value"
 					start: 0
-					end: 100
+					end: 500
 					step: 1
 					initial: {_value}
 
@@ -71,7 +84,7 @@ function gameruleDialog(g: gamerule, p: player):
 			add dynamic action button:
 				label: "Set"
 				id: "gamerule_set"
-				additions: nbt from "{gamerule:%{_g}%}"
+				additions: nbt from "{gamerule:""%{_g}%""}"
 			add dynamic action button:
 				label: "Back"
 				id: "custom:open_gamerules_menu"
@@ -108,15 +121,7 @@ function gameruleConfirm(g: gamerule, v: object, p: player):
 					label: "Gamerules"
 					id: "custom:open_gamerules_menu"
 
-
-command /gm [<gamerule>]:
-	trigger:
-		if arg-1 is not set:
-			gamerulesDialog(player)
-		else:
-			gameruleDialog(arg-1, player)
-
-on dynamic button click:
+on custom click:
 	set {_key} to "%event-namespacedkey%"
 	if {_key} = "custom:open_gamerules_menu":
 		gamerulesDialog(player)

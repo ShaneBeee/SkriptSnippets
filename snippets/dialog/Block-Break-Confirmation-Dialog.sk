@@ -1,0 +1,32 @@
+# Block Break Confirmation
+# By: ShaneBee
+
+# This script opens a dialog box when a player breaks a block
+# asking them to confirm whether to break the block.
+
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
+
+# Do note, this is not intended for production, only for educational purposes
+
+on mine:
+	if gamemode of player is survival:
+		cancel event
+		set {_b} to event-block
+		open multi action dialog to player:
+			title: "Block Break Confirmation"
+			can_close_with_escape: false
+			columns: 2
+			body:
+				add plain message body:
+					contents: mini message from "Do you want to break this block?"
+			actions:
+				add callback action button:
+					label: mini message from "<green>Confirm Break"
+					tooltip: mini message from "I wish for the block to break and drop stuff"
+					trigger:
+						break {_b} with effects using player's tool
+
+				add static action button:
+					label: mini message from "<red>Cancel Break"
+					tooltip: mini message from "I do not wish for the block to break"
+					# No action as we want nothing to happen

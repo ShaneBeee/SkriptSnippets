@@ -1,0 +1,120 @@
+# Ban Menu
+# By: ShaneBee
+
+# This is a simple ban menu with several inputs.
+
+# Requirements: SkBee 3.16.0+, Paper 1.21.7+
+
+# Do note, this is not intended for production, only for educational purposes
+
+command /leban [<player>]:
+	trigger:
+		set {_b} to sender
+		set {_p} to arg-1
+		open multi action dialog to player:
+			title: "<bold>Ban Menu"
+			body:
+				if {_p} is set:
+					add plain message body:
+						contents: "Ban &b%{_p}%"
+				else:
+					add plain message body:
+						contents: "Ban a player"
+				add item body:
+					item: 1 of mace
+					show_tooltip: false
+			inputs:
+				if {_p} is not set:
+					add text input:
+						key: "to_ban"
+						label: "Player to ban:"
+				add number range input:
+					key: "time_input"
+					label: "Time"
+					start: 0
+					end: 100
+					step: 1
+					initial: 0
+				add single option input:
+					key: "span_input"
+					label: "Span"
+					options:
+						add options entry:
+							id: "minutes"
+							display: "Minutes"
+						add options entry:
+							id: "hours"
+							display: "Mours"
+						add options entry:
+							id: "days"
+							display: "Days"
+						add options entry:
+							id: "permanent"
+							display: "&cPermanent"
+				add text input:
+					key: "reason_input"
+					label: "Reason:"
+					max_length: 100
+			actions:
+				if {_p} is set:
+					add callback action button:
+						label: "Ban %{_p}%!"
+						trigger:
+							leBan({_b}, event-nbt, {_p})
+				else:
+					add callback action button:
+						label: "Ban!"
+						trigger:
+							leBan({_b}, event-nbt, {_})
+
+function leBan(banner: player, n: nbtcompound, p: player):
+	# Check for valid player
+	if {_p} is not set:
+		set {_name} to string tag "to_ban" of {_n}
+		set {_p} to offlineplayer({_name}, false)
+		if {_p} is not set:
+			banProblem({_banner}, "&cNo player found for: %nl%&e%{_name}%")
+
+	# Check for self banning
+	if {_p} = {_banner}:
+		banProblem({_banner}, "&cYou cannot ban yourself!")
+		stop
+
+	# Check for valid timespan
+	set {_span} to (string tag "span_input" of {_n}) parsed as timespan period
+	set {_time} to float tag "time_input" of {_n}
+	if all:
+		{_time} <= 0
+		{_span} is set
+	then:
+		banProblem({_banner}, "&cTime must be greater than 0")
+		stop
+
+	set {_timespan} to timespan({_time}, {_span})
+
+	# Check for valid reason
+	set {_reason} to string tag "reason_input" of {_n}
+	if all:
+		{_reason} is set
+		length of {_reason} > 0
+	then:
+		set {_reason} to "&c" + {_reason}
+	else:
+		banProblem({_banner}, "&cInvalid reason!")
+		stop
+
+	if {_span} is set:
+		ban {_p} due to {_reason} for {_timespan}
+		kick {_p} due to ("&cTemporary Ban%nl%&eReason: " + {_reason} + "%nl%&eLength: %{_timespan}%")
+		send ("&cTemporary Ban%nl%&ePlayer: &b%{_p}%%nl%&eReason: " + {_reason} + "%nl%&eLength: %{_timespan}%") to {_banner}
+	else:
+		ban {_p} due to {_reason}
+		kick {_p} due to ("&cPermanent Ban%nl%&eReason: " + {_reason})
+		send ("&cPermanent Ban%nl%&ePlayer: &b%{_p}%%nl%&eReason: " + {_reason}) to {_banner}
+
+function banProblem(p: player, s: string):
+	open notice dialog to {_p}:
+		title: "Ban Problem"
+		body:
+			add text body:
+				contents: {_s}
