@@ -1,0 +1,64 @@
+# WORLD METRICS
+# A simple command to get the TPS/MSPT of a world
+# By: ShaneBee
+
+# Command options:
+# /worldmetrics tps
+# /worldmetrics tps --world WorldName
+# /worldmetrics mspt
+# /worldmetrics mspt --world WorldName
+
+# Requirements: HySkript
+
+function getTpsColor(tps: number, max: number) :: string:
+	set {_p} to ({_tps} / {_max}) * 100
+	if {_p} > 90:
+		return "<green>%{_tps}%<reset>"
+	else if {_p} > 70:
+		return "<yellow>%{_tps}%<reset>"
+	else:
+		return "<red>%{_tps}%<reset>"
+
+function getMsptColor(mspt: number, tps: number) :: string:
+	set {_max} to (1000 / {_tps})
+	set {_p} to ({_mspt} / {_max}) * 100
+	if {_p} < 50:
+		return "<green>%{_mspt}%<reset>"
+	else if {_p} < 80:
+		return "<yellow>%{_mspt}%<reset>"
+	else if {_p} < 90:
+		return "<red>%{_mspt}%<reset>"
+	else:
+		return "<dark_red>%{_mspt}%<reset>"
+
+world command /worldmetrics:
+	description: "Check the performance metrics of a world"
+	sub command /tps:
+		trigger:
+			set {_w} to event-world
+
+			set {_max} to world tps of {_w}
+			set {_a} to current tps of {_w}
+			set {_b} to current tps of {_w} for the last minute
+			set {_c} to current tps of {_w} for the last 5 minutes
+
+			set {_a} to getTpsColor({_a}, {_max})
+			set {_b} to getTpsColor({_b}, {_max})
+			set {_c} to getTpsColor({_c}, {_max})
+
+			send formatted "TPS: %{_a}%(10 sec) // %{_b}%(1 min) // %{_c}%(5 min)"
+
+	sub command /mspt:
+		trigger:
+			set {_w} to event-world
+
+			set {_tps} to world tps of {_w}
+			set {_a} to current mspt of {_w}
+			set {_b} to current mspt of {_w} for the last minute
+			set {_c} to current mspt of {_w} for the last 5 minutes
+
+			set {_a} to getMsptColor({_a}, {_tps})
+			set {_b} to getMsptColor({_b}, {_tps})
+			set {_c} to getMsptColor({_c}, {_tps})
+
+			send formatted "MSPT: %{_a}%(10 sec) // %{_b}%(1 min) // %{_c}%(5 min)"
