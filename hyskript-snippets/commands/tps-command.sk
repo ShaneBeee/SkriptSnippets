@@ -8,7 +8,7 @@
 # /worldmetrics mspt
 # /worldmetrics mspt --world WorldName
 
-# Requirements: HySkript
+# Requirements: HySkript 1.1.0+
 
 function getTpsColor(tps: number, max: number) :: string:
 	set {_p} to ({_tps} / {_max}) * 100
