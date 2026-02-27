@@ -1,0 +1,23 @@
+# Bed Command
+# A simple command to teleport a player to their nearest bed.
+# By: ShaneBee
+
+# Requirements: HySkript 1.0.0+
+
+player command /nearestbed:
+	description: "Teleport you to your nearest bed!"
+	trigger:
+		set {_beds::*} to respawn locations of player in world of player
+		if size of {_beds::*} = 0:
+			send "You have no beds set"
+			stop
+
+		loop {_beds::*}:
+			if {_bed} is not set:
+				set {_bed} to loop-value
+			else:
+				set {_d1} to distance between player and loop-value
+				set {_d2} to distance between player and {_bed}
+				if {_d1} < {_d2}:
+					set {_bed} to loop-value
+		teleport player to {_bed}
