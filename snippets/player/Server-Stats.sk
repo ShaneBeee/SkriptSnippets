@@ -106,29 +106,29 @@ function updateBoard():
 					if loop-player doesn't have permission "beestats.sidebar":
 						continue
 					set {_p} to loop-player
-					set title of {_p}'s scoreboard to {-statsboard::title}
-					set line 15 of {_p}'s scoreboard to "<##11C3D8>Loaded Chunks:"
-					set line 14 of {_p}'s scoreboard to "&7- &bWorld: <##78D811>%{-chunks::%world ""world""%}%"
-					set line 13 of {_p}'s scoreboard to "&7- &bNether: <##D85C11>%{-chunks::%world ""world_nether""%}%"
-					set line 12 of {_p}'s scoreboard to "<##11C3D8>Average Tick:"
-					set line 11 of {_p}'s scoreboard to "&7- %{-statsboard::avgtick}%&7ms"
-					set line 10 of {_p}'s scoreboard to "<##11C3D8>TPS:"
-					set line 9 of {_p}'s scoreboard to "&7- <##11D875>%{-statsboard::tps}%"
-					set line 8 of {_p}'s scoreboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
-					set line 7 of {_p}'s scoreboard to "&7- &bAll: <##11D875>%{-statsboard::entities::tick}%&7/<##11D875>%{-statsboard::entities::all}%"
-					set line 6 of {_p}'s scoreboard to "&7- &bMobs: <##11D875>%{-statsboard::mobs::tick}%&7/<##11D875>%{-statsboard::mobs::all}%"
-					set line 5 of {_p}'s scoreboard to "&7- &bEnemies: <##11D875>%{-statsboard::enemies::tick}%&7/<##11D875>%{-statsboard::enemies::all}%"
-					set line 4 of {_p}'s scoreboard to "&7- &bDisplay: <##11D875>%{-statsboard::displays::tick}%&7/<##11D875>%{-statsboard::displays::all}%"
-					set line 3 of {_p}'s scoreboard to "&7- &bVillagers: <##11D875>%{-statsboard::villagers::tick}%&7/<##11D875>%{-statsboard::villagers::all}%"
-					set line 2 of {_p}'s scoreboard to "&7- &bFalling: <##11D875>%{-statsboard::falling::tick}%&7/<##11D875>%{-statsboard::falling::all}%"
-					set line 1 of {_p}'s scoreboard to "&7- &bDropped: <##11D875>%{-statsboard::drops::tick}%&7/<##11D875>%{-statsboard::drops::all}%"
+					set title of {_p}'s fastboard to {-statsboard::title}
+					set line 15 of {_p}'s fastboard to "<##11C3D8>Loaded Chunks:"
+					set line 14 of {_p}'s fastboard to "&7- &bWorld: <##78D811>%{-chunks::%world ""world""%}%"
+					set line 13 of {_p}'s fastboard to "&7- &bNether: <##D85C11>%{-chunks::%world ""world_nether""%}%"
+					set line 12 of {_p}'s fastboard to "<##11C3D8>Average Tick:"
+					set line 11 of {_p}'s fastboard to "&7- %{-statsboard::avgtick}%&7ms"
+					set line 10 of {_p}'s fastboard to "<##11C3D8>TPS:"
+					set line 9 of {_p}'s fastboard to "&7- <##11D875>%{-statsboard::tps}%"
+					set line 8 of {_p}'s fastboard to "<##11C3D8>Entities: &7(<##11D875>ticking&7/<##11D875>total&7)"
+					set line 7 of {_p}'s fastboard to "&7- &bAll: <##11D875>%{-statsboard::entities::tick}%&7/<##11D875>%{-statsboard::entities::all}%"
+					set line 6 of {_p}'s fastboard to "&7- &bMobs: <##11D875>%{-statsboard::mobs::tick}%&7/<##11D875>%{-statsboard::mobs::all}%"
+					set line 5 of {_p}'s fastboard to "&7- &bEnemies: <##11D875>%{-statsboard::enemies::tick}%&7/<##11D875>%{-statsboard::enemies::all}%"
+					set line 4 of {_p}'s fastboard to "&7- &bDisplay: <##11D875>%{-statsboard::displays::tick}%&7/<##11D875>%{-statsboard::displays::all}%"
+					set line 3 of {_p}'s fastboard to "&7- &bVillagers: <##11D875>%{-statsboard::villagers::tick}%&7/<##11D875>%{-statsboard::villagers::all}%"
+					set line 2 of {_p}'s fastboard to "&7- &bFalling: <##11D875>%{-statsboard::falling::tick}%&7/<##11D875>%{-statsboard::falling::all}%"
+					set line 1 of {_p}'s fastboard to "&7- &bDropped: <##11D875>%{-statsboard::drops::tick}%&7/<##11D875>%{-statsboard::drops::all}%"
 	else:
-		set title of scoreboard of {_p} to "&7[&cUnavailable&7]"
-		set line 1 of scoreboard of {_p} to "&7Stats board requires Paper"
+		set title of fastboard of {_p} to "&7[&cUnavailable&7]"
+		set line 1 of fastboard of {_p} to "&7Stats board requires Paper"
 
 on unload:
 	delete {-boards}
-	clear scoreboard of all players
+	clear fastboard of all players
 	stop all tasks
 
 on load:
@@ -146,7 +146,7 @@ command /stats [<text>]:
 			else:
 				delete {-boards}
 				wait 1 tick
-				clear scoreboard of all players
+				clear fastboard of all players
 		else if arg-1 = "rambar":
 			ramBar()
 		else if arg-1 = "biomebar":
@@ -162,12 +162,6 @@ on tab complete of "/stats":
 	set tab completions for position 1 to "sidebar", "rambar" and "biomebar"
 
 #! SHOW BIOME BAR !#
-# NMS-API adds the ability to see custom biomes (from datapacks)
-# Without said API, you will only see vanilla biomes
-
-on load:
-	parse if class "com.shanebeestudios.nms.api.world.WorldApi" exists:
-		set {-worldapi} to class "com.shanebeestudios.nms.api.world.WorldApi"
 
 every 5 tick:
 	if {-biomebar} is set:
@@ -176,13 +170,7 @@ every 5 tick:
 				continue
 			if loop-player's tool is a debug stick:
 				continue
-			if {-worldapi} is set:
-				set {_b} to try {-worldapi}.getBiome(location of loop-player)
-				if the last java error is set:
-					# This means the API failed, so lets get rid of it
-					delete {-worldapi}
-			else:
-				set {_b} to namespaced key of biome at loop-player
+			set {_b} to namespaced key of biome at loop-player
 			set {_b} to "%{_b}%"
 			replace "minecraft:" with "&bminecraft&r:&e" in {_b}
 			replace "wythers:" with "&awythers&r:&e" in {_b}
