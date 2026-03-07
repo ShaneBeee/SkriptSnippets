@@ -4,7 +4,7 @@
 # This little script allows you to visually structures before placing them
 # using block display entities.
 
-# Requires Minecraft 1.19.4+ and SkBee 2.8.1+
+# Requires Minecraft 1.21.8+, Skript 2.14.0+, Skript-Reflect 2.6.3+ and SkBee 3.17.0+
 
 #! This loads all the available structures to be placed !#
 # Minecraft only loads ones that its placed in the world
@@ -42,13 +42,14 @@ command /structure <s:string>:
 					continue
 				set {_off} to blockstate offset of loop-value
 				spawn block display at {_l}:
-					set display blockdata of entity to {_data}
+					set blockdata of entity to {_data}
 					set display translation of entity to {_off}
-					set display teleport duration of entity to 5
-					set display brightness of entity to displayBrightness(15,15)
+					set teleport duration of entity to 5 ticks
+					set block brightness override of entity to 15
+					set sky brightness override of entity to 15
 					set display scale of entity to vector(1.001,1.001,1.001)
-					set interpolation start of entity to 0
-					set interpolation duration of entity to 5
+					set interpolation delay of entity to 0 ticks
+					set interpolation duration of entity to 1 tick
 					set {_e::%uuid of entity%} to entity
 
 			while {-test::%uuid of player%} is set:
@@ -56,10 +57,10 @@ command /structure <s:string>:
 				teleport {_e::*} to {_l}
 				if {-rotate::%uuid of player%} is true:
 					loop {_e::*}:
-						set interpolation start of loop-value to 0
-						set interpolation duration of loop-value to 5
-						set {_q} to display right rotation of loop-value rotated around vector(0,90,0)
-						set display right rotation of loop-value to {_q}
+						set interpolation delay of loop-value to 0 ticks
+						set interpolation duration of loop-value to 5 ticks
+						set {_q} to right rotation of loop-value rotated around y axis by 90
+						set right rotation of loop-value to {_q}
 						set {_rot} to display translation of loop-value
 						rotate {_rot} around y axis by 90
 						set display translation of loop-value to {_rot}
