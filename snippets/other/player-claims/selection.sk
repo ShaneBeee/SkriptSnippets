@@ -2,6 +2,20 @@
 options:
 	prefix: &7[&bClaims&7]&r
 
+local function blockLine(p: player, start: boolean, b: blocks):
+	loop {_b::*}:
+		if {_start} = true:
+			make {_p} see highest block at loop-value as gold block
+		else:
+			make {_p} see highest block at loop-value as original
+
+local function corner(p: player, start: boolean, l: locations):
+	loop {_l::*}:
+		if {_start} = true:
+			make {_p} see highest block at loop-value as glowstone
+		else:
+			make {_p} see highest block at loop-value as original
+
 function visualizeClaim(p: player, l1: location, l3: location, start: boolean):
 	set {_x} to x coord of {_l1}
 	set {_z} to z coord of {_l3}
@@ -11,37 +25,11 @@ function visualizeClaim(p: player, l1: location, l3: location, start: boolean):
 	set {_z} to z coord of {_l1}
 	set {_l4} to location({_x}, 1, {_z}, world of {_p})
 
-	loop blocks between {_l1} and {_l2}:
-		if {_start} = true:
-			make {_p} see highest block at loop-value as gold block
-		else:	
-			make {_p} see highest block at loop-value as highest block at loop-value
-	loop blocks between {_l2} and {_l3}:
-		if {_start} = true:
-			make {_p} see highest block at loop-value as gold block
-		else:	
-			make {_p} see highest block at loop-value as highest block at loop-value
-	loop blocks between {_l3} and {_l4}:
-		if {_start} = true:
-			make {_p} see highest block at loop-value as gold block
-		else:	
-			make {_p} see highest block at loop-value as highest block at loop-value
-	loop blocks between {_l4} and {_l1}:
-		if {_start} = true:
-			make {_p} see highest block at loop-value as gold block
-		else:	
-			make {_p} see highest block at loop-value as highest block at loop-value
-
-	if {_start} = true:
-		make {_p} see highest block at {_l1} as glowstone
-		make {_p} see highest block at {_l2} as glowstone
-		make {_p} see highest block at {_l3} as glowstone
-		make {_p} see highest block at {_l4} as glowstone
-	else:
-		make {_p} see highest block at {_l1} as highest block at {_l1}
-		make {_p} see highest block at {_l2} as highest block at {_l2}
-		make {_p} see highest block at {_l3} as highest block at {_l3}
-		make {_p} see highest block at {_l4} as highest block at {_l4}
+	blockLine({_p}, {_start}, blocks between {_l1} and {_l2})
+	blockLine({_p}, {_start}, blocks between {_l2} and {_l3})
+	blockLine({_p}, {_start}, blocks between {_l3} and {_l4})
+	blockLine({_p}, {_start}, blocks between {_l4} and {_l1})
+	corner({_p}, {_start}, ({_l1}, {_l2}, {_l3}, {_l4}))
 
 function startSelection(p: player):
 	set {-selection::%uuid of {_p}%} to true
@@ -71,7 +59,6 @@ function hasOverlap(l1: location, l2: location) :: boolean:
 	loop blocks within {_l1} and {_l2}:
 		if size of all bounds at loop-value > 0:
 			return true
-	
 	return false
 	
 on right click holding golden shovel:
@@ -121,5 +108,3 @@ on right click holding golden shovel:
 			make player see block at {_l1} as redstone block
 			wait 2 seconds
 			make player see block at {_l1} as block at {_l1}
-
-
