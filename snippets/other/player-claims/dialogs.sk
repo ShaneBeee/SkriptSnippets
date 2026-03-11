@@ -1,0 +1,444 @@
+
+options:
+	prefix: &7[&bClaims&7]&r
+
+function mainClaimDialog(p: player):
+	open multi action dialog to {_p}:
+		title: "&b&lClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold>Claim Options"
+		actions:
+			add callback action button:
+				label: mini message from "<head:%name of {_p}%> User Info"
+				tooltip: "Get information about your claims"
+				trigger:
+					execute player command "/claim user"
+			add callback action button:
+				label: mini message from "<sprite:items:item/filled_map> Claim Info"
+				tooltip: "Get information about the claim you're standing in"
+				trigger:
+					execute player command "/claim info"
+			add callback action button:
+				label: mini message from "<sprite:items:item/golden_shovel> Start Selection"
+				tooltip: "Click to start a new claim selection session"
+				trigger:
+					execute player command "/claim selection"
+					close inventory of {_p}
+		exit_action:
+			add callback action button:
+				label: "&cExit"
+				trigger:
+					close inventory of player
+
+function userInfoDialog(p: player):
+	open multi action dialog to {_p}:
+		title: "&b&lClaims"
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>User Info"
+			add plain message body:
+				contents: mini message from "<hover:show_text:'How many horizontal claim blocks you have accumulated'>Available Claim Blocks: &b%availableClaimBlocks({_p})%"
+			add plain message body:
+				contents: "Total Claims: &b%claimCount({_p})%"
+		actions:
+			set {_claims::*} to claimList({_p})
+			if size of {_claims::*} = 0:
+				add callback action button:
+					label: "&cNo Claims"
+					tooltip: "&cYou have no claims"
+					trigger:
+						userInfoDialog({_p})
+			else:
+				loop {_claims::*}:
+					set {_claim} to loop-value
+					add callback action button:
+						label: {_claim}
+						trigger:
+							claimInfoDialog({_p}, {_claim})
+		exit_action:
+			add callback action button:
+				label: "Back to Claims Menu"
+				tooltip: "Go back to the main claim menu"
+				trigger:
+					mainClaimDialog({_p})
+
+function claimInfoDialog(p: player, id: string):
+	set {_owner} to getClaimOwner({_id})
+	if {_owner} = name of {_p}:
+		set {_role} to "Owner"
+	else:
+		set {_role} to getRole({_id}, {_p})
+		set {_role} to proper case {_role}
+	open multi action dialog to {_p}:
+		title: "&b&lClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: "<bold>Claim ID:<reset> '%{_id}%'"
+			add plain message body:
+				contents: "<bold>Owner:<reset> %{_owner}%"
+			add plain message body:
+				contents: "<bold>Role:<reset> %{_role}%"
+		actions:
+			if hasPermission({_id}, {_p}, "manage_perms") = true:
+				add callback action button:
+					label: "Manage"
+					tooltip: "Manage role permissions and members of this claim"
+					trigger:
+						claimManageDialog({_p}, {_id})
+			add callback action button:
+				label: "Dummy"
+				trigger:
+					# 
+		exit_action:
+			add callback action button:
+				label: "Back to User Info"
+				tooltip: "Go back to your user info page"
+				trigger:
+					userInfoDialog({_p})
+
+function claimManageDialog(p: player, id: string):
+	open multi action dialog to {_p}:
+		title: "&b&lClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: "<bold>Claim Management"
+			add plain message body:
+				contents: "<bold>Claim ID:<reset> '%{_id}%'"
+		actions:
+			add callback action button:
+				label: "Permissions"
+				tooltip: "Manage permissions of this claim"
+				trigger:
+					claimRolesDialog({_p}, {_id})
+			add callback action button:
+				label: "Members"
+				tooltip: "Manage members of this claim"
+				trigger:
+					claimManageMembersDialog({_p}, {_id})
+
+			if {_p} is an op:
+				add callback action button:
+					label: "Debug"
+					tooltip: "Send debug info of this claim to console"
+					trigger:
+						debugToConsole({_id})
+			if {_p} has permission "minecraft.command.teleport":
+				add callback action button:
+					label: "Teleport"
+					tooltip: "Teleport to this claim"
+					trigger:
+						close inventory of player
+						teleportToClaim({_id}, {_p})
+
+		exit_action:
+			add callback action button:
+				label: "Back to User Info"
+				tooltip: "Go back to your user info page"
+				trigger:
+					userInfoDialog({_p})
+
+function selectionDialog(p: player):
+	open multi action dialog to {_p}:
+		title: "Claim Selection"
+		body:
+			add plain message body:
+				contents: mini message from "<bold>Selection Options"
+		actions:
+			if hasClaimReadySelection({_p}) = true:
+				add callback action button:
+					label: "&aAccept"
+					tooltip: "Click to accept your selection and create your claim"
+					trigger:
+						createClaim(player)
+			else:
+				add callback action button:
+					label: "&eAccept"
+					tooltip: "&cYour selection is not ready to claim"
+					trigger:
+						selectionDialog(player)
+
+			add callback action button:
+				label: "&cCancel"
+				tooltip: "Click to cancel your selection"
+				trigger:
+					cancelSelection(player)
+					send "{@prefix} Your selection has been &ccancelled"
+
+function claimRolesDialog(p: player, id: string):
+	open multi action dialog to {_p}:
+		title: "&bClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>Roles"
+		actions:
+			add callback action button:
+				label: "Visitor"
+				tooltip: "Non-member players that visit your claim"
+				trigger:
+					claimPermissionDialog({_p}, {_id}, "visitor")
+
+			add callback action button:
+				label: "Access"
+				tooltip: "Members which have general access to your claim"
+				trigger:
+					claimPermissionDialog({_p}, {_id}, "access")
+
+			add callback action button:
+				label: "Builder"
+				tooltip: "Members which can build in your claim"
+				trigger:
+					claimPermissionDialog({_p}, {_id}, "builder")
+
+			add callback action button:
+				label: "Admin"
+				tooltip: "Admin members that have the most access to your claim"
+				trigger:
+					claimPermissionDialog({_p}, {_id}, "admin")
+		exit_action:
+			add callback action button:
+				label: "Back to Claim Page"
+				trigger:
+					claimInfoDialog({_p}, {_id})
+
+function claimManageMembersDialog(p: player, id: string):
+	open multi action dialog to {_p}:
+		title: "&bClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>Members"
+		actions:
+			add callback action button:
+				label: "Add Member"
+				tooltip: "Add a member to this claim"
+				trigger:
+					claimAddMemberDialog({_p}, {_id})
+			add callback action button:
+				label: "All Members"
+				tooltip: "Manage members"
+				trigger:
+					claimAllMembersDialog({_p}, {_id})
+		exit_action:
+			add callback action button:
+				label: "Back to Manage"
+				tooltip: "Go back to your manage user page"
+				trigger:
+					claimManageDialog({_p}, {_id})
+
+function claimAllMembersDialog(p: player, id: string):
+	open multi action dialog to {_p}:
+		title: "&bClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>Members"
+		actions:
+			set {_names::*} to getMembers({_id})
+			if size of {_names::*} = 0:
+				add callback action button:
+					label: "&cNo Members"
+					trigger:
+						# todo
+			else:
+				loop {_names::*}:
+					set {_name} to loop-value
+					set {_op} to offlineplayer({_name}, false)
+					add callback action button:
+						label: {_name}
+						trigger:
+							claimManageMember({_p}, {_op}, {_id})
+		exit_action:
+			add callback action button:
+				label: "Back to Members"
+				trigger:
+					claimManageMembersDialog({_p}, {_id})
+
+function claimManageMember(p: player, member: offlineplayer, id: string):
+	open multi action dialog to {_p}:
+		title: "&bClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>Member"
+			add plain message body:
+				contents: "Role: %proper case getRole({_id}, {_member})%"
+		actions:
+			add callback action button:
+				label: "&cRemove Member"
+				trigger:
+					removeMember({_id}, {_member})
+					claimAllMembersDialog({_p}, {_id})
+			add callback action button:
+				label: "Change Role"
+				trigger:
+					claimSetMemberRoleDialog({_p}, {_id}, {_member})
+		exit_action:
+			add callback action button:
+				label: "Back to All Members"
+				trigger:
+					claimAllMembersDialog({_p}, {_id})
+
+function claimSetMemberRoleDialog(p: player, id: string, member: offlineplayer):
+	open multi action dialog to {_p}:
+		title: "&bClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>Member"
+		actions:
+			add callback action button:
+				label: "Access"
+				trigger:
+					setRole({_id}, {_member}, "access")
+					claimManageMember({_p}, {_id}, {_id})
+			add callback action button:
+				label: "Builder"
+				trigger:
+					setRole({_id}, {_member}, "builder")
+					claimManageMember({_p}, {_id}, {_id})
+			add callback action button:
+				label: "Admin"
+				trigger:
+					setRole({_id}, {_member}, "admin")
+					claimManageMember({_p}, {_id}, {_id})
+		exit_action:
+			add callback action button:
+				label: "Back to All Members"
+				trigger:
+					claimAllMembersDialog({_p}, {_id})
+
+
+function claimAddMemberDialog(p: player, id: string):
+	open multi action dialog to {_p}:
+		title: "&bClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>Add Member"
+		inputs:
+			add text input:
+				key: "name"
+				label: "<#27F5F2>Name:"
+				width: 150
+			add single option input:
+				key: "role"
+				label: "<#27F5F2>Role"
+				width: 150
+				options:
+					add options entry:
+						id: "access"
+						display: "Access"
+						initial: true
+					add options entry:
+						id: "builder"
+						display: "Builder"
+						initial: false
+					add options entry:
+						id: "admin"
+						display: "Admin"
+						initial: false
+		actions:
+			add callback action button:
+				label: "<#4DF527>Add Member"
+				trigger:
+					set {_op} to offlineplayer(string tag "name" of event-nbt, false)
+					set {_name} to name of {_op}
+					set {_uuid} to uuid of {_op}
+					set {_role} to string tag "role" of event-nbt
+					if any:
+						{_name} is not set
+						{_uuid} is not set
+					then:
+						close inventory of {_p}
+						send "{@prefix} &cInvalid player name" to {_p}
+					else:
+						addMember({_id}, {_op}, {_role})
+					
+function getColor(b: boolean) :: string:
+	if {_b} = true:
+		return "green"
+	else:
+		return "red"
+function claimPermissionDialog(p: player, id: string, role: string):
+	if {_role} = "visitor":
+		set {_name} to "Visitors"
+	else:
+		set {_name} to (proper case {_role}) + " members"
+	open multi action dialog to {_p}:
+		title: "&bClaims"
+		columns: 1
+		after_action: "none"
+		body:
+			add plain message body:
+				contents: mini message from "<bold><u>Permissions"
+			add plain message body:
+				contents: "Modify the permissions for %{_name}%"
+		actions:
+			set {_label} to getColor(getClaimRolePermission({_id}, {_role}, "can_break"))
+			add callback action button:
+				label: mini message from "<sprite:items:item/diamond_pickaxe> <%{_label}%> Can Break"
+				tooltip: "Whether the player can break blocks in your claim"
+				trigger:
+					flipPerm({_id}, {_role}, "can_break")
+					claimPermissionDialog({_p}, {_id}, {_role})
+
+			set {_label} to getColor(getClaimRolePermission({_id}, {_role}, "can_place"))
+			add callback action button:
+				label: mini message from "<sprite:blocks:block/grass_block_side> <%{_label}%> Can Place"
+				tooltip: "Whether the player can place blocks in your claim"
+				trigger:
+					flipPerm({_id}, {_role}, "can_place")
+					claimPermissionDialog({_p}, {_id}, {_role})
+
+			set {_label} to getColor(getClaimRolePermission({_id}, {_role}, "can_open_doors"))
+			add callback action button:
+				label: mini message from "<sprite:items:item/oak_door> <%{_label}%> Can Open Doors"
+				tooltip: "Whether the player can open doors/gates in your claim"
+				trigger:
+					flipPerm({_id}, {_role}, "can_open_doors")
+					claimPermissionDialog({_p}, {_id}, {_role})
+
+			set {_label} to getColor(getClaimRolePermission({_id}, {_role}, "can_open_chests"))
+			add callback action button:
+				label: mini message from "<head:MHF_Chest> <%{_label}%> Can Open Chests"
+				tooltip: "Whether the player can open chests in your claim"
+				trigger:
+					flipPerm({_id}, {_role}, "can_open_chests")
+					claimPermissionDialog({_p}, {_id}, {_role})
+
+			set {_label} to getColor(getClaimRolePermission({_id}, {_role}, "can_hurt_mobs"))
+			add callback action button:
+				label: mini message from "<head:MHF_Sheep> <%{_label}%> Can Hurt Mobs"
+				tooltip: "Whether the player can hurt mobs in your claim"
+				trigger:
+					flipPerm({_id}, {_role}, "can_hurt_mobs")
+					claimPermissionDialog({_p}, {_id}, {_role})
+
+			set {_label} to getColor(getClaimRolePermission({_id}, {_role}, "manage_perms"))
+			add callback action button:
+				label: mini message from "<sprite:items:item/trial_key> <%{_label}%> Manage Perms"
+				tooltip: "Whether the player can manage perms in your claim"
+				trigger:
+					flipPerm({_id}, {_role}, "manage_perms")
+					claimPermissionDialog({_p}, {_id}, {_role})
+
+		exit_action:
+			add callback action button:
+				label: "Back to Roles"
+				trigger:
+					claimRolesDialog({_p}, {_id})

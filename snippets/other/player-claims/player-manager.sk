@@ -1,0 +1,60 @@
+
+options:
+	prefix: &7[&bClaims&7]&r
+	default_claim_count: 50
+
+function availableClaimBlocks(p: player) :: number:
+	return {-claims::%uuid of {_p}%::available}
+
+function addToClaimBlocks(p: player, n: number):
+	add {_n} to {-claims::%uuid of {_p}%::available}
+
+function claimCount(p: player) :: number:
+	return size of {-claims::%uuid of {_p}%::owned_claims::*}
+
+function claimList(p: player) :: strings:
+	return {-claims::%uuid of {_p}%::owned_claims::*}
+
+function addPlayerClaim(p: player, claim: string):
+	add {_claim} to {-claims::%uuid of {_p}%::owned_claims::*}
+
+local function saveData(p: player):
+	set {_data} to compound tag "users;%uuid of {_p}%" of {-claim_data}
+	set string list tag "owned_claims" of {_data} to {-claims::%uuid of {_p}%::owned_claims::*}
+	set int tag "available" of {_data} to {-claims::%uuid of {_p}%::available}
+	set compound tag "users;%uuid of {_p}%" of {-claim_data} to {_data}
+
+local function loadData(p: player):
+	set {_data} to compound tag "users;%uuid of {_p}%" of {-claim_data}
+	set {-claims::%uuid of {_p}%::owned_claims::*} to string list tag "owned_claims" of {_data}
+	set {-claims::%uuid of {_p}%::available} to int tag "available" of {_data}
+	if {-claims::%uuid of {_p}%::available} is not set:
+		set {-claims::%uuid of {_p}%::available} to {@default_claim_count}
+
+#! Load Data !#
+on skript load:
+	set {-claim_data} to nbt from file "plugins/GP/users.nbt"
+
+on skript unload:
+	loop all players:
+		saveData(loop-player)
+	save nbt file of {-claim_data}
+
+on join:
+	loadData(player)
+
+on quit:
+	saveData(player)
+	save nbt file of {-claim_data}
+
+#! Add to Available Claims!#
+every 1 minute:
+	loop all players:
+		if idle time of loop-player < 5 minutes:
+			addToClaimBlocks(loop-player, 12)
+
+#! Save Data !#
+every 5 minutes:
+	loop all players:
+		saveData(loop-player)
+	save nbt file of {-claim_data}

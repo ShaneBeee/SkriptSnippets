@@ -1,0 +1,149 @@
+
+function getAndIncreaseNextClaimId() :: number:
+	set {_id} to {-claims::nextId}
+	add 1 to {-claims::nextId}
+	return {_id}
+
+function createClaim(p: player):
+	set {_l1} to {-selection::%uuid of {_p}%::low}
+	set {_l2} to {-selection::%uuid of {_p}%::high}
+	if hasClaimReadySelection({_p}) != true:
+		stop
+	cancelSelection({_p})
+
+	set {_next} to getAndIncreaseNextClaimId()
+	set {_id} to "claim-%{_next}%"
+
+	create full bound with id {_id} between block at {_l1} and block at {_l2}:
+		set bound owner of event-bound to {_p}
+
+	set y of {_l2} to y of {_l1}
+	set {_size} to (size of blocks within {_l1} and {_l2}) * -1
+	addToClaimBlocks({_p}, {_size})
+
+	set {_n} to nbt from "{}"
+	set uuid tag "owner-uuid" of {_n} to uuid of {_p}
+	set string tag "owner-name" of {_n} to name of {_p}
+
+	set {_perms} to compound tag "permissions" of {_n}
+	createDefaultPerm({_perms}, "visitor", false, false, false, false, false, false)
+	createDefaultPerm({_perms}, "access", false, false, true, false, false, false)
+	createDefaultPerm({_perms}, "builder", true, true, true, true, false, false)
+	createDefaultPerm({_perms}, "admin", true, true, true, true, true, false)
+
+	set compound tag {_id} of {-claims} to {_n}
+
+	addPlayerClaim({_p}, {_id})
+	send "{@prefix} &aYour claim has been created!" to {_p}
+
+function createDefaultPerm(n: nbtcompound, role: string, break: boolean, place: boolean, open_doors: boolean, open_chests: boolean, hurt_mobs: boolean, manage_perms: boolean):
+	set {_perms} to compound tag {_role} of {_n}
+	set boolean tag "can_break" of {_perms} to {_break}
+	set boolean tag "can_place" of {_perms} to {_place}
+	set boolean tag "can_open_doors" of {_perms} to {_open_doors}
+	set boolean tag "can_open_chests" of {_perms} to {_open_chests}
+	set boolean tag "can_hurt_mobs" of {_perms} to {_hurt_mobs}
+	set boolean tag "manage_perms" of {_perms} to {_manage_perms}
+
+function getClaimRolePermission(id: string, role: string, permission: string) :: boolean:
+	set {_n} to compound tag {_id} of {-claims}
+	set {_n} to compound tag "permissions" of {_n}
+	set {_n} to compound tag {_role} of {_n}
+	return boolean tag {_permission} of {_n}
+
+function flipPerm(id: string, role: string, permission: string):
+	set {_n} to compound tag {_id} of {-claims}
+	set {_n} to compound tag "permissions" of {_n}
+	set {_n} to compound tag {_role} of {_n}
+	set {_bool} to boolean tag {_permission} of {_n}
+	if {_bool} = true:
+		set boolean tag {_permission} of {_n} to false
+	else:
+		set boolean tag {_permission} of {_n} to true
+
+function getMembers(id: string) :: strings:
+	set {_n} to compound tag {_id} of {-claims}
+	set {_n} to compound tag "members" of {_n}
+	loop nbt tags of {_n}:
+		set {_u} to compound tag loop-value of {_n}
+		set {_op} to offlineplayer(loop-value, false)
+		if all:
+			{_op} is set
+			name of {_op} is set
+		then:
+			set {_name} to name of {_op}
+			set string tag "name" of {_u} to name of {_op}
+		else:
+			set {_name} to string tag "name" of {_u}
+		add {_name} to {_names::*}
+	return {_names::*}
+
+function addMember(id: string, p: offlineplayer, role: string):
+	set {_n} to compound tag {_id} of {-claims}
+	set {_n} to compound tag "members" of {_n}
+	set {_n} to compound tag "%uuid of {_p}%" of {_n}
+	set string tag "role" of {_n} to {_role}
+	set string tag "name" of {_n} to name of {_p}
+
+function removeMember(id: string, p: offlineplayer):
+	set {_n} to compound tag {_id} of {-claims}
+	set {_n} to compound tag "members" of {_n}
+	delete compound tag "%uuid of {_p}%" of {_n}
+
+function getRole(id: string, p: offlineplayer) :: string:
+	set {_n} to compound tag {_id} of {-claims}
+	set {_n} to compound tag "members" of {_n}
+	set {_n} to compound tag "%uuid of {_p}%" of {_n}
+	set {_role} to string tag "role" of {_n}
+	if {_role} is not set:
+		set {_role} to "visitor"
+	return {_role}
+
+function setRole(id: string, p: offlineplayer, role: string):
+	set {_n} to compound tag {_id} of {-claims}
+	set {_n} to compound tag "members" of {_n}
+	set {_n} to compound tag "%uuid of {_p}%" of {_n}
+	set string tag "role" of {_n} to {_role}
+
+function hasPermission(id: string, p: player, perm: string) :: boolean:
+	set {_n} to compound tag {_id} of {-claims}
+	if uuid tag "owner-uuid" of {_n} = uuid of {_p}:
+		#set {_role} to "admin"
+		return true
+	else:
+		set {_mem} to compound tag "members" of {_n}
+		set {_mem} to compound tag "%uuid of {_p}%" of {_mem}
+		set {_role} to string tag "role" of {_mem}
+
+	set {_perms} to compound tag "permissions" of {_n}
+	if boolean tag "%{_role}%;%{_perm}%" of {_perms} = true:
+		return true
+	else:
+		return false
+
+function teleportToClaim(id: string, p: player):
+	set {_bound} to bound with id {_id}
+	set {_loc} to bound center of {_bound}
+	set {_loc} to (location of highest block at {_loc}) ~ vector(0, 1, 0)
+	teleport {_p} to {_loc}
+
+function debugToConsole(id: string):
+	set {_n} to compound tag {_id} of {-claims}
+	send "Claim: %{_id}%" + newline + pretty nbt of {_n} with split "  " to console
+
+on skript load:
+	set {-claims} to nbt from file "plugins/GP/claims.nbt"
+	set {-claims::nextId} to int tag "next_id" of {-claims}
+	if {-claims::nextId} is not set:
+		set {-claims::nextId} to 1
+
+on skript unload:
+	set int tag "next_id" of {-claims} to {-claims::nextId}
+	save nbt file from {-claims}
+
+function getClaimInfo(id: string) :: nbt compound:
+	return compound tag {_id} of {-claims}
+
+function getClaimOwner(id: string) :: string:
+	return string tag "owner-name" of getClaimInfo({_id})
+

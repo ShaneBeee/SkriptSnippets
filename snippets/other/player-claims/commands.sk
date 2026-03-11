@@ -1,0 +1,25 @@
+
+options:
+	prefix: &7[&bClaims&7]&r
+
+brig command tree /claim:
+	literal arg "selection":
+		trigger:
+			startSelection(player)
+	literal arg "user":
+		trigger:
+			userInfoDialog(player)
+	literal arg "info":
+		trigger:
+			set {_b::*} to bounds at location of player
+			if {_b::1} is set:
+				set {_id} to bound id of {_b::1}
+				claimInfoDialog(player, {_id})
+			else:
+				close inventory of player # close any open dialog
+				send "{@prefix} &eThere are no claims at your location"
+	trigger:
+		if {-selection::%uuid of player%} is set:
+			selectionDialog(player)
+		else:
+			mainClaimDialog(player)

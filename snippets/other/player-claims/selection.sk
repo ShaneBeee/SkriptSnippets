@@ -1,0 +1,125 @@
+
+options:
+	prefix: &7[&bClaims&7]&r
+
+function visualizeClaim(p: player, l1: location, l3: location, start: boolean):
+	set {_x} to x coord of {_l1}
+	set {_z} to z coord of {_l3}
+	set {_l2} to location({_x}, 1, {_z}, world of {_p})
+
+	set {_x} to x coord of {_l3}
+	set {_z} to z coord of {_l1}
+	set {_l4} to location({_x}, 1, {_z}, world of {_p})
+
+	loop blocks between {_l1} and {_l2}:
+		if {_start} = true:
+			make {_p} see highest block at loop-value as gold block
+		else:	
+			make {_p} see highest block at loop-value as highest block at loop-value
+	loop blocks between {_l2} and {_l3}:
+		if {_start} = true:
+			make {_p} see highest block at loop-value as gold block
+		else:	
+			make {_p} see highest block at loop-value as highest block at loop-value
+	loop blocks between {_l3} and {_l4}:
+		if {_start} = true:
+			make {_p} see highest block at loop-value as gold block
+		else:	
+			make {_p} see highest block at loop-value as highest block at loop-value
+	loop blocks between {_l4} and {_l1}:
+		if {_start} = true:
+			make {_p} see highest block at loop-value as gold block
+		else:	
+			make {_p} see highest block at loop-value as highest block at loop-value
+
+	if {_start} = true:
+		make {_p} see highest block at {_l1} as glowstone
+		make {_p} see highest block at {_l2} as glowstone
+		make {_p} see highest block at {_l3} as glowstone
+		make {_p} see highest block at {_l4} as glowstone
+	else:
+		make {_p} see highest block at {_l1} as highest block at {_l1}
+		make {_p} see highest block at {_l2} as highest block at {_l2}
+		make {_p} see highest block at {_l3} as highest block at {_l3}
+		make {_p} see highest block at {_l4} as highest block at {_l4}
+
+function startSelection(p: player):
+	set {-selection::%uuid of {_p}%} to true
+	send "{@prefix} Your selection has started, click the first corner." to {_p}
+	give {_p} a golden shovel named "&7Claim Tool"
+
+function cancelSelection(p: player):
+	set {_l1} to {-selection::%uuid of {_p}%::low}
+	set {_l2} to {-selection::%uuid of {_p}%::high}
+	delete {-selection::%uuid of {_p}%}
+	delete {-selection::%uuid of {_p}%::*}
+	visualizeClaim({_p}, {_l1}, {_l2}, false)
+	wait 2 ticks
+	remove (all golden shovels in inventory of {_p} where [name of input = "&7Claim Tool"]) from {_p}
+
+function hasClaimReadySelection(p: player) :: boolean:
+	if all:
+		{-selection::%uuid of {_p}%} is set
+		{-selection::%uuid of {_p}%} = false
+	then:
+		return true
+	else:
+		return false
+
+function hasOverlap(l1: location, l2: location) :: boolean:
+	set y of {_l2} to y of {_l1}
+	loop blocks within {_l1} and {_l2}:
+		if size of all bounds at loop-value > 0:
+			return true
+	
+	return false
+	
+on right click holding golden shovel:
+	if clicked block is not set:
+		stop
+	if name of player's tool != "&7Claim Tool":
+		stop
+	cancel event
+	if {-selection::%uuid of player%} is not set:
+		send "{@prefix} &cYou do not have a claim selection started! &rRun &7/&bClaim &rto get started!" to player
+		stop
+
+	if {-selection::%uuid of player%} = false:
+		send "{@prefix} &cYou already selected your claim! &rRun &7/&bClaim &rfor more options!" to player
+		stop
+
+	if {-selection::%uuid of player%::low} is not set:
+		set {-selection::%uuid of player%::low} to location of clicked block
+		send "{@prefix} Now select your second corner" to player
+		wait 5 ticks
+		make player see clicked block as glowstone
+
+	else if {-selection::%uuid of player%::high} is not set:
+		set {_l1} to location of clicked block
+		set {_l2} to {-selection::%uuid of player%::low}
+		set y of {_l2} to y of {_l1}
+		set {_size} to size of blocks within {_l1} and {_l2}
+		set {_avail} to availableClaimBlocks(player)
+		
+		if {_avail} >= {_size}:
+			if hasOverlap({_l1}, {_l2}) = true:
+				send "{@prefix} &cYour claim selection overlaps another claim, please try again" to player
+				cancelSelection(player)
+				stop
+
+			set {-selection::%uuid of player%::high} to {_l1}
+			set {-selection::%uuid of player%} to false
+			
+			send "{@prefix} Claim selection finished, run &7/&bclaim &rfor claim options" to player
+			wait 5 ticks
+			visualizeClaim(player, {_l1}, {_l2}, true)
+			wait 10 seconds
+			visualizeClaim(player, {_l1}, {_l2}, false)
+		else:
+			send "{@prefix} &cYou selected a claim with size &e%{_size}% &cbut you only have &e%{_avail}% &cavailable claim blocks." to player
+			wait 2 ticks
+			make player see block at {_l1} as redstone block
+			wait 2 seconds
+			make player see block at {_l1} as block at {_l1}
+
+
