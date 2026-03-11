@@ -15,14 +15,14 @@ on right click holding a stick:
 
 	loop {_b::*}:
 		set {_l1} to bound lesser corner of loop-value
-		set {_l2} to bound greater corner of loop-value
+		set {_l2} to (bound greater corner of loop-value) ~ vector(-1, -1, -1)
 		visualizeClaim(player, {_l1}, {_l2}, true)
 
 	wait 5 seconds
 
 	loop {_b::*}:
 		set {_l1} to bound lesser corner of loop-value
-		set {_l2} to bound greater corner of loop-value
+		set {_l2} to (bound greater corner of loop-value) ~ vector(-1, -1, -1)
 		visualizeClaim(player, {_l1}, {_l2}, false)
 		delete {_l1} and {_l2}
 		wait 1 tick
