@@ -1,0 +1,416 @@
+# Full World Generation
+# By ShaneBee
+
+# This snippet shows off a world generator that is meant to resemble a similar terrain to Minecraft.
+# It is fully customized.
+# This is a work in progress.
+# This snippet is not meant to be copy/pasted, its to show off some world generation techniques.
+# This snippet uses several custom biomes.
+# My good friend Claude helped me with some of this stuff.
+
+# Requirements: SkBee, SkNoise, skript-reflect
+
+on load:
+	# Wait a tick to make sure generator is properly loaded
+	# without this the spawn area doesn't generate properly (it's flat)
+	wait 1 tick
+	if world("world_test_world") is not loaded:
+		set {_w} to world creator named "world_test_world"
+		set chunk generator of {_w} to chunk generator with id "test_gen"
+		load world from creator {_w}
+
+options:
+	seed: 234
+
+on load:
+	suppress variable save warning
+	# 1 = Continental (large scale landmasses)
+	set {-gen1} to new perlin generator with seed {@seed}
+	set octaves of {-gen1} to 4
+	set frequency of {-gen1} to 0.5
+	set lacunarity of {-gen1} to 2.0
+	set gain of {-gen1} to 0.5
+
+	# 2 = Terrain (rolling hills)
+	set {-gen2} to new perlin generator with seed ({@seed} + 1)
+	set octaves of {-gen2} to 4
+	set frequency of {-gen2} to 0.5
+	set lacunarity of {-gen2} to 2.0
+	set gain of {-gen2} to 0.5
+
+	# 3 = Mountain (ridged peaks)
+	set {-gen3} to new perlin generator with seed ({@seed} + 2)
+	set octaves of {-gen3} to 3
+	set frequency of {-gen3} to 0.5
+	set lacunarity of {-gen3} to 2.2
+	set gain of {-gen3} to 0.6
+
+	# 4 = Biome (cellular)
+	set {-gen4} to new cellular generator with seed {@seed}
+	set octaves of {-gen4} to 3
+	set frequency of {-gen4} to 0.015
+	set lacunarity of {-gen4} to 2.0
+	set cellular distance function of {-gen4} to hybrid
+	set cellular return type of {-gen4} to cellvalue
+	set cellular jitter of {-gen4} to 1
+
+	# 5 = Detail/roughness (small scale surface noise)
+	set {-gen5} to new perlin generator with seed ({@seed} + 3)
+	set octaves of {-gen5} to 3
+	set frequency of {-gen5} to 0.5
+	set lacunarity of {-gen5} to 2.0
+	set gain of {-gen5} to 0.6
+
+	# 6 = Domain warp (distorts continent shape for natural irregularity)
+	set {-gen6} to new perlin generator with seed ({@seed} + 4)
+	set octaves of {-gen6} to 3
+	set frequency of {-gen6} to 0.5
+	set lacunarity of {-gen6} to 2.0
+	set gain of {-gen6} to 0.5
+
+	# 7 = Temperature
+	set {-gen7} to new perlin generator with seed ({@seed} + 5)
+	set octaves of {-gen7} to 3
+	set frequency of {-gen7} to 0.5
+	set lacunarity of {-gen7} to 2.0
+	set gain of {-gen7} to 0.5
+
+	# 8 = Humidity
+	set {-gen8} to new perlin generator with seed ({@seed} + 6)
+	set octaves of {-gen8} to 3
+	set frequency of {-gen8} to 0.5
+	set lacunarity of {-gen8} to 2.0
+	set gain of {-gen8} to 0.5
+
+expression continental noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		set {_warpX} to value of {-gen6} at ({_x} / 600), 0, ({_z} / 600)
+		set {_warpZ} to value of {-gen6} at ({_x} / 600), ({_z} / 600), 0
+		set {_warpStrength} to 120
+		set {_warpedX} to ({_x} + {_warpX} * {_warpStrength}) / 2000
+		set {_warpedZ} to ({_z} + {_warpZ} * {_warpStrength}) / 2000
+		set {_raw} to value of {-gen1} at {_warpedX}, 0, {_warpedZ}
+		# Removed the + 0.05 bias — 0 now means shoreline
+		# Adjust the bias here if you want more ocean vs land coverage
+		# Positive bias = more land, negative = more ocean
+		return {_raw} + 0.05
+
+expression terrain noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		set {_t} to value of {-gen2} at ({_x} / 180), 0, ({_z} / 180)
+		return {_t}
+
+expression mountain noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		# Sample raw value
+		set {_m} to value of {-gen3} at ({_x} / 200), 0, ({_z} / 200)
+		# Ridged: fold the value so peaks are sharp (abs trick)
+		# SkNoise returns -1 to 1, so: ridged = 1 - abs(value)
+		set {_ridged} to 1 - abs({_m})
+		# Square it to make flat lowlands and sharper peaks
+		set {_ridged} to {_ridged} * {_ridged}
+		return {_ridged}
+
+
+# Smooth blend helper: clamps t between 0 and 1 with a smooth curve
+# This avoids hard edges between biomes
+expression smoothstep of %number% between %number% and %number%:
+	get:
+		set {_t} to ((expr-1) - (expr-2)) / ((expr-3) - (expr-2))
+		if {_t} < 0:
+			return 0
+		if {_t} > 1:
+			return 1
+		# smoothstep formula: 3t^2 - 2t^3
+		return {_t} * {_t} * (3 - 2 * {_t})
+
+expression detail noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		set {_d} to value of {-gen5} at ({_x} / 40), 0, ({_z} / 40)
+		return {_d}
+
+expression erosion at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		# Sample terrain at a small offset to measure slope
+		# The bigger the difference between samples, the less eroded (rougher)
+		# The smaller the difference, the more eroded (flatter)
+		set {_sample1} to terrain noise at {_x}, {_z}
+		set {_sample2} to terrain noise at ({_x} + 8), ({_z} + 8)
+		set {_diff} to {_sample1} - {_sample2}
+		if {_diff} < 0:
+			set {_diff} to {_diff} * -1
+		# Invert so high value = high erosion (flat), low value = low erosion (rough)
+		# diff will typically range 0 to ~0.3, so we normalize and invert
+		set {_erosion} to 1 - ({_diff} * 5)
+		if {_erosion} < 0:
+			set {_erosion} to 0
+		if {_erosion} > 1:
+			set {_erosion} to 1
+		return {_erosion}
+
+expression temperature noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		# Large scale — temperature zones should be wide, continent-sized
+		set {_t} to value of {-gen7} at ({_x} / 1500), 0, ({_z} / 1500)
+		# Remap from roughly -0.5/0.5 to 0/1
+		set {_t} to ({_t} + 0.5)
+		if {_t} < 0:
+			set {_t} to 0
+		if {_t} > 1:
+			set {_t} to 1
+		return {_t}
+
+expression humidity noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		# Large scale like temperature — humidity zones should be wide
+		set {_h} to value of {-gen8} at ({_x} / 1500), 0, ({_z} / 1500)
+		set {_h} to ({_h} + 0.5)
+		if {_h} < 0:
+			set {_h} to 0
+		if {_h} > 1:
+			set {_h} to 1
+		return {_h}
+
+expression block noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+
+		set {_cont} to continental noise at {_x}, {_z}
+		set {_terrain} to terrain noise at {_x}, {_z}
+		set {_mountain} to mountain noise at {_x}, {_z}
+		set {_detail} to detail noise at {_x}, {_z}
+
+		# Midland — use gen3 at a land-appropriate scale (not the biome scale)
+		set {_mid} to value of {-gen3} at ({_x} / 100), 0, ({_z} / 180)
+
+		# Ocean floor — use detail noise at finer scale for more varied seabed
+		set {_oceanAmt} to smoothstep of {_cont} between -0.4 and 0.02
+		set {_invertedOcean} to 1 - {_oceanAmt}
+		set {_oceanFloor} to 20 + ({_invertedOcean} * 42)
+		set {_oceanWobble} to value of {-gen2} at ({_x} / 80), 0, ({_z} / 80)
+		set {_oceanFloor} to {_oceanFloor} + ({_oceanWobble} * 8 * (1 - {_oceanAmt}))
+		set {_oceanFloor} to {_oceanFloor} + ({_detail} * 4 * (1 - {_oceanAmt}))
+
+		# Land amount — how far inland (0 = shore, 1 = deep inland)
+		set {_landAmt} to smoothstep of {_cont} between 0 and 0.15
+
+		# Base rise
+		set {_baseHeight} to {_landAmt} * 8
+
+		# Terrain — sampled at FINE scale to avoid terracing
+		# The key: amplitude must stay well below 1.0 near shore
+		# so floor() doesn't create visible bands
+		# We gate this by landAmt so coast is gentler
+		set {_terrainAmp} to 8 + {_landAmt} * 14
+		set {_terrainHeight} to {_terrain} * {_terrainAmp}
+
+		# Mid layer — different frequency to break up regularity
+		# Also gated so it grows inland
+		set {_midAmp} to {_landAmt} * 12
+		set {_midHeight} to {_mid} * {_midAmp}
+
+		# Mountains — only deep inland, moderate height
+		set {_mountainBlend} to smoothstep of {_landAmt} between 0.5 and 0.9
+		set {_mountainHeight} to {_mountain} * {_mountainBlend} * 40
+
+		# Detail — subtle everywhere on land, breaks up contour lines
+		set {_detailHeight} to {_detail} * 2.5
+
+		# Combine — NO global scale multiplier this time as it caused banding
+		set {_landTotal} to 62 + {_baseHeight} + {_terrainHeight} + {_midHeight} + {_mountainHeight} + {_detailHeight}
+
+		# Shore blend
+		set {_blendAmt} to smoothstep of {_cont} between -0.05 and 0.05
+		set {_result} to floor({_oceanFloor} + ({_landTotal} - {_oceanFloor}) * {_blendAmt})
+
+		if {_result} < 20:
+			set {_result} to 20
+
+		return {_result}
+
+expression noise biome with cont %number% and terrain %number% at %number%, %number%:
+	get:
+		set {_cont} to expr-1
+		set {_terrain} to expr-2
+		set {_x} to expr-3
+		set {_z} to expr-4
+
+		set {_landAmt} to smoothstep of {_cont} between 0 and 0.15
+
+		# Erosion inline using already-fetched terrain — avoids second terrain lookup
+		set {_sample2} to terrain noise at ({_x} + 8), ({_z} + 8)
+		set {_diff} to {_terrain} - {_sample2}
+		if {_diff} < 0:
+			set {_diff} to {_diff} * -1
+		set {_erosion} to 1 - ({_diff} * 5)
+		if {_erosion} < 0:
+			set {_erosion} to 0
+		if {_erosion} > 1:
+			set {_erosion} to 1
+
+		# Temperature and humidity — only computed in biome gen, not block noise
+		set {_temp} to temperature noise at {_x}, {_z}
+		set {_humidity} to humidity noise at {_x}, {_z}
+
+		# --- OCEAN ---
+		if {_cont} < -0.05:
+			return deep ocean
+		else if {_cont} < 0.042:
+			return warm ocean
+		# --- COAST ---
+		else if {_cont} < 0.055:
+			if {_temp} < 0.2:
+				return beer:coast/frozen_beach
+			else if {_temp} < 0.5:
+				return beer:coast/dry_coast
+			else if {_temp} < 0.75:
+				return beer:coast/beachy_beach
+			else:
+				return beer:coast/palm_beach
+
+		# --- LAND ---
+		else if {_landAmt} < 0.6:
+			if {_erosion} > 0.6:
+				# Flat / eroded areas
+				if {_temp} < 0.25:
+					# Cold flat
+					if {_humidity} < 0.5:
+						return snowy plains
+					else:
+						return beer:plains/cold_plains
+				else if {_temp} < 0.55:
+					# Temperate flat
+					if {_humidity} < 0.3:
+						return beer:plains/dry_plains
+					else if {_humidity} < 0.6:
+						return beer:plains/temperate_plains
+					else:
+						return beer:plains/lush_plains
+				else:
+					# Hot flat
+					if {_humidity} < 0.3:
+						return beer:desert/dry_desert
+					else if {_humidity} < 0.6:
+						return minecraft:savanna
+					else:
+						return beer:desert/lush_desert
+			else:
+				# Rough / forested areas
+				if {_temp} < 0.25:
+					# Cold rough
+					if {_humidity} < 0.4:
+						return snowy taiga
+					else:
+						return snowy slopes
+				else if {_temp} < 0.55:
+					# Temperate rough
+					if {_humidity} < 0.3:
+						return beer:forest/dry_forest
+					else if {_humidity} < 0.55:
+						return beer:forest/tall_oak
+					else if {_humidity} < 0.75:
+						return beer:forest/lush_forest
+					else:
+						return beer:forest/moss_garden
+				else if {_temp} < 0.75:
+					# Warm rough
+					if {_humidity} < 0.3:
+						return windswept savanna
+					else if {_humidity} < 0.6:
+						return flower forest
+					else:
+						return minecraft:swamp
+				else:
+					# Hot rough
+					if {_humidity} < 0.3:
+						return badlands
+					else if {_humidity} < 0.6:
+						return sparse jungle
+					else:
+						return minecraft:jungle
+
+		# --- MID INLAND ---
+		else if {_landAmt} < 0.85:
+			if {_temp} < 0.25:
+				return grove
+			else if {_temp} < 0.5:
+				return old growth pine taiga
+			else if {_temp} < 0.75:
+				if {_humidity} < 0.5:
+					return birch forest
+				else:
+					return dark forest
+			else:
+				if {_humidity} < 0.5:
+					return wooded badlands
+				else:
+					return bamboo jungle
+
+		# --- DEEP INLAND / HIGH ELEVATION ---
+		else:
+			if {_temp} < 0.25:
+				return frozen peaks
+			else if {_temp} < 0.5:
+				return jagged peaks
+			else if {_temp} < 0.75:
+				return windswept hills
+			else:
+				return stony peaks
+
+register chunk generator with id "test_gen":
+	vanilla caves: false
+	vanilla decor: true
+	vanilla structures: true
+	noise gen:
+		loop 16 times:
+			loop 16 times:
+				set {_x} to (loop-number-1) - 1
+				set {_z} to (loop-number-2) - 1
+
+				set {_worldX} to {_x} + (chunkdata chunk x * 16)
+				set {_worldZ} to {_z} + (chunkdata chunk z * 16)
+
+				# Compute shared values ONCE per column
+				set {_cont} to continental noise at {_worldX}, {_worldZ}
+				set {_terrain} to terrain noise at {_worldX}, {_worldZ}
+
+				# Cache continental and terrain for biome gen to reuse
+				set {-cache_cont::%{_worldX}%::%{_worldZ}%} to {_cont}
+				set {-cache_terrain::%{_worldX}%::%{_worldZ}%} to {_terrain}
+
+				# Compute block height using already-fetched cont and terrain
+				set {_n} to block noise at {_worldX}, {_worldZ}
+
+				set chunkdata blocks within vector({_x}, -64, {_z}) and vector({_x}, ({_n} - 1), {_z}) to stone[]
+				if {_n} < 63:
+					set chunkdata blocks within vector({_x}, {_n}, {_z}) and vector({_x}, 62, {_z}) to water[]
+	height gen:
+		set {_x} to x coord of event-location
+		set {_z} to z coord of event-location
+		set {_n} to block noise at {_x}, {_z}
+		if {_n} > 62:
+			set chunkdata height to {_n}
+		else:
+			set chunkdata height to 62
+	biome gen:
+		set {_x} to x coord of event-location
+		set {_z} to z coord of event-location
+		# Read cached values — no noise recomputation
+		set {_cont} to {-cache_cont::%{_x}%::%{_z}%}
+		set {_terrain} to {-cache_terrain::%{_x}%::%{_z}%}
+		set chunkdata biome to noise biome with cont {_cont} and terrain {_terrain} at {_x}, {_z}
