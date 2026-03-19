@@ -68,34 +68,30 @@ on load:
 	set lacunarity of {-gen6} to 2.0
 	set gain of {-gen6} to 0.5
 
-	# 7 = Temperature (cellular for distinct zones)
-	set {-gen7} to new cellular generator with seed ({@seed} + 5)
-	set octaves of {-gen7} to 1
-	set frequency of {-gen7} to 0.8
+	# 7 = Temperature — large scale, slow varying, perlin
+	set {-gen7} to new perlin generator with seed ({@seed} + 5)
+	set octaves of {-gen7} to 4
+	set frequency of {-gen7} to 0.5
 	set lacunarity of {-gen7} to 2.0
-	set cellular distance function of {-gen7} to euclidean
-	set cellular return type of {-gen7} to cellvalue
-	set cellular jitter of {-gen7} to 0.5
+	set gain of {-gen7} to 0.5
 
-	# 8 = Humidity (cellular for distinct zones)
-	set {-gen8} to new cellular generator with seed ({@seed} + 6)
-	set octaves of {-gen8} to 1
-	set frequency of {-gen8} to 0.8
+	# 8 = Humidity — large scale, independent from temperature
+	set {-gen8} to new perlin generator with seed ({@seed} + 6)
+	set octaves of {-gen8} to 4
+	set frequency of {-gen8} to 0.5
 	set lacunarity of {-gen8} to 2.0
-	set cellular distance function of {-gen8} to euclidean
-	set cellular return type of {-gen8} to cellvalue
-	set cellular jitter of {-gen8} to 0.5
+	set gain of {-gen8} to 0.5
 
-	# 9 = Temperature warp X
+	# 9 = Erosion — large scale, determines flat vs hilly regions
 	set {-gen9} to new perlin generator with seed ({@seed} + 7)
-	set octaves of {-gen9} to 2
+	set octaves of {-gen9} to 4
 	set frequency of {-gen9} to 0.5
 	set lacunarity of {-gen9} to 2.0
 	set gain of {-gen9} to 0.5
 
-	# 10 = Humidity warp
+	# 10 = Peaks and Valleys (weirdness/PV) — separates valleys from peaks
 	set {-gen10} to new perlin generator with seed ({@seed} + 8)
-	set octaves of {-gen10} to 2
+	set octaves of {-gen10} to 4
 	set frequency of {-gen10} to 0.5
 	set lacunarity of {-gen10} to 2.0
 	set gain of {-gen10} to 0.5
@@ -107,6 +103,18 @@ on load:
 	set lacunarity of {-gen11} to 2.0
 	set gain of {-gen11} to 0.6
 
+# Continental noise: returns a value normalized to 0.0-1.0 with a curve applied
+# Raw perlin at /2000 has a very gentle gradient — without a curve, most land
+# sits in a narrow range near the shoreline and never reads as "inland".
+#
+# The curve works like this:
+#   - Ocean (raw < 0): compressed into 0.0-0.5 (ocean takes up lower half)
+#   - Land (raw >= 0): stretched into 0.5-1.0 with a power curve so that
+#     even a small rise above the shoreline quickly reads as mid/far inland
+#
+# Shoreline = 0.5 exactly. Biome thresholds:
+#   deep ocean < 0.20, shallow ocean 0.20-0.45, beach 0.45-0.55
+#   near inland 0.55-0.68, mid inland 0.68-0.82, far inland > 0.82
 expression continental noise at %number%, %number%:
 	get:
 		set {_x} to expr-1
@@ -116,10 +124,21 @@ expression continental noise at %number%, %number%:
 		set {_warpStrength} to 120
 		set {_warpedX} to ({_x} + {_warpX} * {_warpStrength}) / 2000
 		set {_warpedZ} to ({_z} + {_warpZ} * {_warpStrength}) / 2000
-		set {_raw} to value of {-gen1} at {_warpedX}, 0, {_warpedZ}
-		# Positive bias = more land, negative = more ocean
-		# Increased from 0.05 to 0.18 for larger continents and smaller oceans
-		return {_raw} + 0.18
+		# Add land bias — positive = more land coverage
+		set {_raw} to (value of {-gen1} at {_warpedX}, 0, {_warpedZ}) + 0.18
+		# Apply asymmetric curve:
+		# Ocean side (raw < 0): map -1..0 -> 0.0..0.5 linearly
+		# Land side (raw >= 0): map 0..1 -> 0.5..1.0 with sqrt curve
+		#   sqrt stretches values near 0 upward quickly
+		#   e.g. raw=0.05 -> sqrt=0.22 -> cont=0.61 (near inland already)
+		#   e.g. raw=0.20 -> sqrt=0.45 -> cont=0.72 (mid inland)
+		if {_raw} < 0:
+			set {_norm} to ({_raw} + 1) * 0.5
+		else:
+			if {_raw} > 1:
+				set {_raw} to 1
+			set {_norm} to 0.5 + (({_raw}) ^ 0.5) * 0.5
+		return {_norm}
 
 expression terrain noise at %number%, %number%:
 	get:
@@ -183,45 +202,47 @@ expression erosion at %number%, %number%:
 			set {_erosion} to 1
 		return {_erosion}
 
+# Temperature: very large scale (3000 block features) so climate zones are broad
+# 0 = frozen, 0.25 = cold, 0.5 = temperate, 0.75 = warm, 1.0 = hot
 expression temperature noise at %number%, %number%:
 	get:
 		set {_x} to expr-1
 		set {_z} to expr-2
-		set {_warpX} to value of {-gen9} at ({_x} / 400), 0, ({_z} / 400)
-		set {_warpZ} to value of {-gen9} at ({_x} / 400), ({_z} / 400), 0
-		set {_wx} to ({_x} + {_warpX} * 200) / 400
-		set {_wz} to ({_z} + {_warpZ} * 200) / 400
-		set {_cellular} to value of {-gen7} at {_wx}, 0, {_wz}
-		set {_cellular} to ({_cellular} + 1) / 2
-		set {_broad} to value of {-gen9} at ({_x} / 2000), 0, ({_z} / 2000)
-		set {_broad} to ({_broad} + 0.5)
-		if {_broad} < 0:
-			set {_broad} to 0
-		if {_broad} > 1:
-			set {_broad} to 1
-		set {_t} to ({_cellular} * 0.6) + ({_broad} * 0.4)
-		if {_t} < 0:
-			set {_t} to 0
-		if {_t} > 1:
-			set {_t} to 1
+		set {_t} to value of {-gen7} at ({_x} / 3000), 0, ({_z} / 3000)
+		set {_t} to ({_t} + 1) / 2
 		return {_t}
 
+# Humidity: very large scale (2500 block features), independent from temperature
+# 0 = arid, 0.5 = moderate, 1.0 = wet
 expression humidity noise at %number%, %number%:
 	get:
 		set {_x} to expr-1
 		set {_z} to expr-2
-		# Different warp generator keeps humidity fully independent from temperature
-		set {_warpX} to value of {-gen10} at ({_x} / 400), 0, ({_z} / 400)
-		set {_warpZ} to value of {-gen10} at ({_x} / 400), ({_z} / 400), 0
-		set {_wx} to ({_x} + {_warpX} * 200) / 400
-		set {_wz} to ({_z} + {_warpZ} * 200) / 400
-		set {_h} to value of {-gen8} at {_wx}, 0, {_wz}
+		set {_h} to value of {-gen8} at ({_x} / 2500), 0, ({_z} / 2500)
 		set {_h} to ({_h} + 1) / 2
-		if {_h} < 0:
-			set {_h} to 0
-		if {_h} > 1:
-			set {_h} to 1
 		return {_h}
+
+# Erosion: large scale (2500 block features) so flat/hilly regions are broad
+# 0 = not eroded (mountainous/hilly), 1 = fully eroded (flat plains/swamps)
+expression erosion noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		set {_e} to value of {-gen9} at ({_x} / 2500), 0, ({_z} / 2500)
+		set {_e} to ({_e} + 1) / 2
+		return {_e}
+
+# Peaks and Valleys (PV): medium scale (800 block features)
+# Ridged noise: 1.0 = sharp peak, 0.0 = valley bottom
+# Used to separate valley floors (rivers/swamps) from hilltops/peaks
+expression pv noise at %number%, %number%:
+	get:
+		set {_x} to expr-1
+		set {_z} to expr-2
+		set {_w} to value of {-gen10} at ({_x} / 800), 0, ({_z} / 800)
+		# Fold into ridged: 1 at peaks, 0 at valleys
+		set {_pv} to 1 - abs({_w})
+		return {_pv}
 
 expression block noise at %number%, %number%:
 	get:
@@ -242,33 +263,33 @@ expression block noise at %number%, %number%:
 		# Small hill layer — medium scale, always active on land
 		set {_hills} to value of {-gen11} at ({_x} / 35), 0, ({_z} / 35)
 
-		# Coastal variation — controls where shoreline sits
+		# Coastal variation — shoreline is now exactly 0.5
 		set {_coastVar} to value of {-gen3} at (({_x} + 5531) / 250), 0, (({_z} + 2917) / 250)
 		set {_coastVar} to ({_coastVar} + 1) / 2
-		set {_coastLow} to {_coastVar} * 0.04
-		set {_coastHigh} to 0.12 + {_coastVar} * 0.1
+		set {_coastLow} to 0.47 + {_coastVar} * 0.02
+		set {_coastHigh} to 0.54 + {_coastVar} * 0.03
 		set {_landAmt} to smoothstep of {_cont} between {_coastLow} and {_coastHigh}
 
-		# Inland scale — subtle elevation rise further from coast
-		set {_inlandScale} to smoothstep of {_cont} between 0.05 and 0.45
+		# Inland scale — 0.5 = shore, 1.0 = deep inland
+		set {_inlandScale} to smoothstep of {_cont} between 0.55 and 0.85
 
 		# --- TERRAIN SHAPE LAYERS ---
 
-		# Rolling hills — gentle local variation on top of the base
-		set {_terrainHeight} to {_terrain} * (5 + {_landAmt} * 8)
+		# Rolling hills — coast has a base amplitude of 8, grows to 18 inland
+		set {_terrainHeight} to {_terrain} * (8 + {_landAmt} * 10)
 
-		# Mid bumps — medium scale variation
-		set {_midHeight} to {_mid} * (3 + {_landAmt} * 6)
+		# Mid bumps — coast has base 5, grows to 12 inland
+		set {_midHeight} to {_mid} * (5 + {_landAmt} * 7)
 
-		# Small hills
-		set {_hillStrength} to smoothstep of {_cont} between 0 and 0.08
-		set {_hillHeight} to {_hills} * 5 * {_hillStrength}
+		# Small hills — present everywhere on land
+		set {_hillStrength} to smoothstep of {_cont} between 0.50 and 0.60
+		set {_hillHeight} to {_hills} * 6 * {_hillStrength}
 
-		# Roughness — surface texture only
-		set {_roughHeight} to {_rough} * 2
+		# Roughness — surface texture
+		set {_roughHeight} to {_rough} * 3
 
 		# Detail — micro bumps
-		set {_detailHeight} to {_detail} * 1.5
+		set {_detailHeight} to {_detail} * 2
 
 		# --- PLATEAU LAYER ---
 		# Plateaus: take the terrain signal, flatten it using a soft-clamp
@@ -279,7 +300,7 @@ expression block noise at %number%, %number%:
 		if {_plateauShape} > 0.4:
 			set {_plateauShape} to 0.4 + ({_plateauShape} - 0.4) * 0.15
 		# Only apply plateaus on land, stronger inland
-		set {_plateauStrength} to smoothstep of {_cont} between 0.1 and 0.5
+		set {_plateauStrength} to smoothstep of {_cont} between 0.55 and 0.80
 		set {_plateauHeight} to {_plateauShape} * {_plateauStrength} * 28
 
 		# --- VALLEY LAYER ---
@@ -302,8 +323,8 @@ expression block noise at %number%, %number%:
 		set {_mountainBlend} to smoothstep of {_inlandScale} between 0.6 and 1.0
 		set {_mountainHeight} to {_mountain} * {_mountainBlend} * 55
 
-		# Zero out all land layers underwater
-		if {_cont} < 0:
+		# Zero out all land layers in ocean (cont < 0.47 = below shoreline)
+		if {_cont} < 0.47:
 			set {_terrainHeight} to 0
 			set {_midHeight} to 0
 			set {_hillHeight} to 0
@@ -316,16 +337,9 @@ expression block noise at %number%, %number%:
 
 		set {_landTotal} to 62 + {_baseHeight} + {_terrainHeight} + {_midHeight} + {_hillHeight} + {_roughHeight} + {_detailHeight} + {_plateauHeight} + {_mountainHeight} - {_valleyDepth}
 
-		# Ocean depth
-		if {_cont} < 0:
-			set {_oceanDepth} to 1 - (smoothstep of {_cont} between -0.4 and 0)
-			set {_depthPull} to {_oceanDepth} * 55
-			if {_depthPull} > 40:
-				set {_depthPull} to 40
-			set {_landTotal} to {_landTotal} - {_depthPull}
-		# Ocean depth — pulls floor down smoothly from shore to deep ocean
-		if {_cont} < 0:
-			set {_oceanDepth} to 1 - (smoothstep of {_cont} between -0.4 and 0)
+		# Ocean depth — pulls floor down smoothly from shore (0.5) to deep ocean (0.0)
+		if {_cont} < 0.50:
+			set {_oceanDepth} to 1 - (smoothstep of {_cont} between 0.0 and 0.50)
 			set {_depthPull} to {_oceanDepth} * 55
 			if {_depthPull} > 40:
 				set {_depthPull} to 40
@@ -336,256 +350,400 @@ expression block noise at %number%, %number%:
 			set {_result} to 20
 		return {_result}
 
-expression noise biome with cont %number% and terrain %number% and temp %number% and humidity %number% at %number%, %number%:
+# ============================================================
+# BIOME LOOKUP
+# Mirrors Minecraft's 6-parameter system:
+#   cont  = how far from coast (ocean -> beach -> near/mid/far inland)
+#   erosion = flat (1.0) vs hilly/mountainous (0.0)
+#   pv    = valley bottom (0.0) vs peak (1.0) — for rivers & peaks
+#   temp  = 0 frozen -> 1 hot (5 bands)
+#   humidity = 0 arid -> 1 wet (5 bands)
+#
+# Parameter bands used:
+#   TEMP:     frozen <0.2, cold 0.2-0.4, temperate 0.4-0.6, warm 0.6-0.8, hot >0.8
+#   HUMIDITY: arid <0.2, dry 0.2-0.4, moderate 0.4-0.6, wet 0.6-0.8, lush >0.8
+#   EROSION:  low(mountain) <0.3, mid 0.3-0.6, high(flat) >0.6
+#   PV:       valley <0.25, mid 0.25-0.75, peak >0.75
+# ============================================================
+expression noise biome with cont %number% and erosion %number% and pv %number% and temp %number% and humidity %number%:
 	get:
 		set {_cont} to expr-1
-		set {_terrain} to expr-2
-		set {_temp} to expr-3
-		set {_humidity} to expr-4
-		set {_x} to expr-5
-		set {_z} to expr-6
+		set {_erosion} to expr-2
+		set {_pv} to expr-3
+		set {_temp} to expr-4
+		set {_humidity} to expr-5
 
-		# Erosion — slope detection
-		set {_sample2} to terrain noise at ({_x} + 8), ({_z} + 8)
-		set {_diff} to {_terrain} - {_sample2}
-		if {_diff} < 0:
-			set {_diff} to {_diff} * -1
-		set {_erosion} to 1 - ({_diff} * 5)
-		if {_erosion} < 0:
-			set {_erosion} to 0
-		if {_erosion} > 1:
-			set {_erosion} to 1
-		# Erosion bands: low < 0.35, medium 0.35-0.65, high > 0.65
-
-		# Temperature bands:
-		# frozen < 0.15, cold 0.15-0.35, temperate 0.35-0.55, warm 0.55-0.75, hot > 0.75
-
-		# Humidity bands:
-		# low < 0.35, medium 0.35-0.65, high > 0.65
-
-		# --- DEEP OCEAN (cont < -0.12) ---
-		if {_cont} < -0.12:
-			if {_temp} < 0.15:
+		# ==============================
+		# DEEP OCEAN (cont < 0.20)
+		# Shoreline = 0.5; deep ocean is well below
+		# ==============================
+		if {_cont} < 0.20:
+			if {_temp} < 0.2:
 				return minecraft:deep_frozen_ocean
-			else if {_temp} < 0.35:
+			else if {_temp} < 0.4:
 				return minecraft:deep_cold_ocean
-			else if {_temp} < 0.55:
+			else if {_temp} < 0.6:
 				return minecraft:deep_ocean
-			else if {_temp} < 0.75:
-				return minecraft:deep_lukewarm_ocean
 			else:
 				return minecraft:deep_lukewarm_ocean
 
-		# --- OCEAN (cont -0.12 to 0.03445) ---
-		else if {_cont} < 0.03445:
-			if {_temp} < 0.15:
+		# ==============================
+		# SHALLOW OCEAN (cont 0.20-0.45)
+		# ==============================
+		else if {_cont} < 0.45:
+			if {_temp} < 0.2:
 				return minecraft:frozen_ocean
-			else if {_temp} < 0.35:
+			else if {_temp} < 0.4:
 				return minecraft:cold_ocean
-			else if {_temp} < 0.55:
+			else if {_temp} < 0.6:
 				return minecraft:ocean
-			else if {_temp} < 0.75:
+			else if {_temp} < 0.8:
 				return minecraft:lukewarm_ocean
 			else:
 				return minecraft:warm_ocean
 
-		# --- COASTAL (cont 0.042 to 0.08) ---
-		else if {_cont} < 0.08:
-			# Low erosion = rocky stony shore regardless of temp
-			if {_erosion} < 0.35:
+		# ==============================
+		# BEACH / COAST (cont 0.45-0.57)
+		# Straddles the shoreline (0.5)
+		# ==============================
+		else if {_cont} < 0.57:
+			# Stony shore on steep low-erosion coasts
+			if {_erosion} < 0.3:
 				return minecraft:stony_shore
-			# High erosion coastal swamps
-			else if {_erosion} > 0.65:
-				if all:
-					{_temp} > 0.55
-					{_temp} < 0.75
-					{_humidity} > 0.65
-				then:
-					return beer:swamp/dripleaf_swamp
-				else if all:
-					{_temp} > 0.15
-					{_temp} < 0.35
-					{_humidity} > 0.65
-				then:
-					return beer:swamp/cold_swamp
-			# Temperature based coasts
-			if {_temp} < 0.15:
+			# Swampy coast: warm+wet with high erosion
+			else if {_erosion} > 0.7:
+				if {_temp} > 0.6:
+					if {_humidity} > 0.6:
+						return beer:swamp/dripleaf_swamp
+			# Standard beach by temperature
+			if {_temp} < 0.2:
 				return beer:coast/frozen_beach
-			else if {_temp} < 0.35:
-				if {_humidity} < 0.65:
-					return beer:coast/coast
-				else:
-					return beer:coast/coast
-			else if {_temp} < 0.55:
-				if {_humidity} < 0.65:
-					return beer:coast/beachy_beach
-				else:
-					return beer:coast/palm_beach
-			else if {_temp} < 0.75:
-				if {_humidity} < 0.65:
+			else if {_temp} < 0.4:
+				return beer:coast/coast
+			else if {_temp} < 0.8:
+				if {_humidity} < 0.4:
 					return beer:coast/beachy_beach
 				else:
 					return beer:coast/palm_beach
 			else:
-				if {_humidity} < 0.35:
+				if {_humidity} < 0.4:
 					return beer:coast/dry_coast
 				else:
 					return beer:coast/lush_coast
 
-		# --- NEAR INLAND (cont 0.08 to 0.18) ---
-		else if {_cont} < 0.18:
-			if {_temp} < 0.15:
-				# Frozen near inland
-				return minecraft:snowy_plains
-			else if {_temp} < 0.35:
-				# Cold near inland
-				if {_erosion} > 0.65:
-					return beer:plains/cold_plains
-				else:
-					return minecraft:snowy_taiga
-			else if {_temp} < 0.55:
-				# Temperate near inland
-				if {_erosion} > 0.65:
-					if {_humidity} < 0.35:
-						return beer:plains/temperate_plains
-					else if {_humidity} < 0.65:
-						return beer:plains/temperate_plains
-					else:
-						return beer:plains/lush_plains
-				else:
-					if {_humidity} < 0.35:
-						return beer:forest/dry_forest
-					else:
-						return beer:forest/tall_oak
-			else if {_temp} < 0.75:
-				# Warm near inland
-				if {_erosion} > 0.65:
-					if {_humidity} < 0.35:
-						return beer:plains/dry_plains
-					else if {_humidity} < 0.65:
+		# ==============================
+		# NEAR INLAND (cont 0.57-0.70)
+		# ==============================
+		else if {_cont} < 0.70:
+			# Valley floors — rivers and swamps
+			if {_pv} < 0.25:
+				if {_temp} < 0.2:
+					return minecraft:frozen_river
+				else if {_temp} > 0.6:
+					if {_humidity} > 0.6:
 						return beer:swamp/dripleaf_swamp
 					else:
+						return minecraft:river
+				else:
+					return minecraft:river
+			# High erosion = flat land
+			else if {_erosion} > 0.6:
+				if {_temp} < 0.2:
+					return minecraft:snowy_plains
+				else if {_temp} < 0.4:
+					if {_humidity} > 0.6:
+						return minecraft:snowy_taiga
+					else:
+						return beer:plains/cold_plains
+				else if {_temp} < 0.6:
+					if {_humidity} < 0.4:
+						return beer:plains/temperate_plains
+					else if {_humidity} < 0.7:
+						return minecraft:plains
+					else:
 						return beer:plains/lush_plains
-				else:
-					if {_humidity} < 0.35:
-						return beer:forest/dry_forest
+				else if {_temp} < 0.8:
+					if {_humidity} < 0.4:
+						return beer:plains/dry_plains
+					else if {_humidity} < 0.7:
+						return minecraft:savanna
 					else:
-						return beer:forest/lush_forest
-			else:
-				# Hot near inland
-				if {_humidity} < 0.35:
-					return beer:desert/dry_desert
-				else if {_humidity} < 0.65:
-					return beer:desert/dry_desert
+						return minecraft:swamp
 				else:
-					return beer:desert/lush_desert
-
-		# --- MID INLAND (cont 0.18 to 0.32) ---
-		else if {_cont} < 0.32:
-			if {_temp} < 0.15:
-				# Frozen mid inland
-				if {_erosion} < 0.35:
-					return minecraft:snowy_slopes
-				else:
+					if {_humidity} < 0.4:
+						return minecraft:desert
+					else:
+						return beer:desert/lush_desert
+			# Moderate erosion = forest/taiga mix
+			else if {_erosion} > 0.3:
+				if {_temp} < 0.2:
 					return minecraft:snowy_taiga
-			else if {_temp} < 0.35:
-				# Cold mid inland
-				if {_erosion} < 0.35:
-					return minecraft:jagged_peaks
-				else if {_erosion} < 0.65:
-					return minecraft:snowy_taiga
-				else:
-					return minecraft:snowy_taiga
-			else if {_temp} < 0.55:
-				# Temperate mid inland
-				if {_erosion} < 0.35:
-					return minecraft:stony_peaks
-				else if {_erosion} < 0.65:
-					return minecraft:windswept_forest
-				else:
-					if {_humidity} < 0.35:
+				else if {_temp} < 0.4:
+					if {_humidity} < 0.5:
+						return minecraft:taiga
+					else:
+						return minecraft:snowy_taiga
+				else if {_temp} < 0.6:
+					if {_humidity} < 0.4:
 						return beer:forest/dry_forest
-					else if {_humidity} < 0.65:
+					else if {_humidity} < 0.7:
+						return minecraft:forest
+					else:
 						return beer:forest/tall_oak
+				else if {_temp} < 0.8:
+					if {_humidity} < 0.4:
+						return minecraft:savanna
+					else if {_humidity} < 0.7:
+						return minecraft:jungle
 					else:
 						return beer:forest/lush_forest
-			else if {_temp} < 0.75:
-				# Warm mid inland
-				if {_erosion} < 0.35:
-					return minecraft:stony_peaks
-				else if {_erosion} < 0.65:
-					if {_humidity} < 0.35:
-						return minecraft:sparse_jungle
-					else if {_humidity} < 0.65:
-						return minecraft:bamboo_jungle
-					else:
-						return minecraft:jungle
 				else:
-					if {_humidity} < 0.35:
-						return minecraft:sparse_jungle
-					else if {_humidity} < 0.65:
-						return minecraft:bamboo_jungle
+					if {_humidity} < 0.4:
+						return minecraft:desert
 					else:
-						return minecraft:jungle
+						return beer:desert/lush_desert
+			# Low erosion = hilly near coast
 			else:
-				# Hot mid inland
-				if {_humidity} < 0.35:
-					return beer:desert/dry_desert
-				else if {_humidity} < 0.65:
-					return beer:desert/dry_desert
-				else:
-					return beer:desert/lush_desert
-
-		# --- FAR INLAND (cont > 0.32) ---
-		else:
-			if {_temp} < 0.15:
-				# Frozen far inland
-				if {_erosion} < 0.35:
-					return minecraft:frozen_peaks
-				else if {_erosion} < 0.65:
+				if {_temp} < 0.2:
 					return minecraft:snowy_slopes
-				else:
-					return minecraft:snowy_taiga
-			else if {_temp} < 0.35:
-				# Cold far inland
-				if {_erosion} < 0.35:
-					return minecraft:jagged_peaks
-				else if {_erosion} < 0.65:
+				else if {_temp} < 0.4:
 					return minecraft:windswept_gravelly_hills
+				else if {_temp} < 0.6:
+					return minecraft:windswept_hills
+				else if {_temp} < 0.8:
+					return minecraft:windswept_savanna
 				else:
-					return minecraft:snowy_taiga
-			else if {_temp} < 0.55:
-				# Temperate far inland
-				if {_erosion} < 0.35:
-					return minecraft:jagged_peaks
-				else if {_erosion} < 0.65:
-					return minecraft:windswept_gravelly_hills
+					return minecraft:badlands
+
+		# ==============================
+		# MID INLAND (cont 0.70-0.85)
+		# ==============================
+		else if {_cont} < 0.85:
+			# Valley floors
+			if {_pv} < 0.25:
+				if {_temp} < 0.2:
+					return minecraft:frozen_river
+				else if {_temp} > 0.6:
+					if {_humidity} > 0.6:
+						return minecraft:swamp
+					else:
+						return minecraft:river
 				else:
-					if {_humidity} < 0.35:
+					return minecraft:river
+			# Plateau tops — moderate erosion + high PV = flat elevated terrain
+			else if {_pv} > 0.75:
+				if {_erosion} > 0.4:
+					# Flat elevated plateau biomes
+					if {_temp} < 0.2:
+						return minecraft:snowy_plains
+					else if {_temp} < 0.4:
+						return minecraft:meadow
+					else if {_temp} < 0.6:
+						if {_humidity} < 0.5:
+							return minecraft:meadow
+						else:
+							return minecraft:cherry_grove
+					else if {_temp} < 0.8:
+						if {_humidity} < 0.5:
+							return minecraft:savanna_plateau
+						else:
+							return beer:forest/moss_garden
+					else:
+						if {_humidity} < 0.5:
+							return minecraft:wooded_badlands
+						else:
+							return minecraft:badlands
+			# High erosion = flat midlands
+			else if {_erosion} > 0.6:
+				if {_temp} < 0.2:
+					return minecraft:snowy_plains
+				else if {_temp} < 0.4:
+					if {_humidity} > 0.5:
+						return minecraft:snowy_taiga
+					else:
+						return beer:plains/cold_plains
+				else if {_temp} < 0.6:
+					if {_humidity} < 0.4:
+						return minecraft:plains
+					else if {_humidity} < 0.7:
+						return minecraft:plains
+					else:
+						return minecraft:sunflower_plains
+				else if {_temp} < 0.8:
+					if {_humidity} < 0.4:
+						return minecraft:savanna
+					else:
+						return minecraft:swamp
+				else:
+					return minecraft:desert
+			# Moderate erosion = main biome zone
+			else if {_erosion} > 0.3:
+				if {_temp} < 0.2:
+					if {_humidity} < 0.5:
+						return minecraft:ice_spikes
+					else:
+						return minecraft:snowy_taiga
+				else if {_temp} < 0.4:
+					if {_humidity} < 0.4:
+						return minecraft:taiga
+					else:
+						return minecraft:old_growth_spruce_taiga
+				else if {_temp} < 0.6:
+					if {_humidity} < 0.3:
+						return beer:forest/dry_forest
+					else if {_humidity} < 0.6:
+						return minecraft:birch_forest
+					else:
+						return minecraft:old_growth_birch_forest
+				else if {_temp} < 0.8:
+					if {_humidity} < 0.3:
+						return minecraft:sparse_jungle
+					else if {_humidity} < 0.6:
+						return minecraft:jungle
+					else:
+						return minecraft:bamboo_jungle
+				else:
+					if {_humidity} < 0.3:
+						return minecraft:desert
+					else if {_humidity} < 0.6:
+						return beer:desert/dry_desert
+					else:
+						return beer:desert/lush_desert
+			# Low erosion = hilly/mountainous mid inland
+			else:
+				if {_temp} < 0.2:
+					if {_pv} > 0.6:
+						return minecraft:frozen_peaks
+					else:
+						return minecraft:snowy_slopes
+				else if {_temp} < 0.4:
+					if {_pv} > 0.6:
+						return minecraft:jagged_peaks
+					else:
+						return minecraft:windswept_gravelly_hills
+				else if {_temp} < 0.6:
+					if {_pv} > 0.6:
+						return minecraft:stony_peaks
+					else:
 						return minecraft:windswept_forest
-					else if {_humidity} < 0.65:
-						return minecraft:windswept_forest
+				else if {_temp} < 0.8:
+					if {_pv} > 0.6:
+						return minecraft:stony_peaks
+					else:
+						return minecraft:windswept_savanna
+				else:
+					return minecraft:badlands
+
+		# ==============================
+		# FAR INLAND (cont > 0.72)
+		# ==============================
+		else:
+			# Valley floors
+			if {_pv} < 0.25:
+				if {_temp} < 0.2:
+					return minecraft:frozen_river
+				else if {_temp} > 0.6:
+					if {_humidity} > 0.6:
+						return minecraft:swamp
+					else:
+						return minecraft:river
+				else:
+					return minecraft:river
+			# High peaks — tall mountains far inland
+			else if {_pv} > 0.7:
+				if {_erosion} < 0.4:
+					if {_temp} < 0.2:
+						return minecraft:frozen_peaks
+					else if {_temp} < 0.4:
+						return minecraft:jagged_peaks
+					else if {_temp} < 0.8:
+						return minecraft:stony_peaks
+					else:
+						return minecraft:badlands
+			# High erosion = flat far inland (plateaus/plains)
+			if {_erosion} > 0.6:
+				if {_temp} < 0.2:
+					return minecraft:snowy_plains
+				else if {_temp} < 0.4:
+					if {_humidity} > 0.5:
+						return minecraft:snowy_taiga
+					else:
+						return minecraft:plains
+				else if {_temp} < 0.6:
+					if {_humidity} < 0.4:
+						return minecraft:plains
+					else:
+						return minecraft:meadow
+				else if {_temp} < 0.8:
+					if {_humidity} < 0.4:
+						return minecraft:savanna_plateau
+					else:
+						return minecraft:swamp
+				else:
+					if {_humidity} < 0.5:
+						return minecraft:wooded_badlands
+					else:
+						return minecraft:badlands
+			# Moderate erosion = highland forests
+			else if {_erosion} > 0.3:
+				if {_temp} < 0.2:
+					if {_humidity} < 0.5:
+						return minecraft:snowy_slopes
+					else:
+						return minecraft:grove
+				else if {_temp} < 0.4:
+					if {_humidity} < 0.4:
+						return minecraft:taiga
+					else:
+						return minecraft:old_growth_pine_taiga
+				else if {_temp} < 0.6:
+					if {_humidity} < 0.4:
+						return minecraft:forest
+					else if {_humidity} < 0.7:
+						return minecraft:dark_forest
 					else:
 						return beer:forest/moss_garden
-			else if {_temp} < 0.75:
-				# Warm far inland
-				if {_erosion} < 0.35:
-					return minecraft:stony_peaks
-				else if {_erosion} < 0.65:
-					return beer:forest/moss_garden
+				else if {_temp} < 0.8:
+					if {_humidity} < 0.4:
+						return minecraft:sparse_jungle
+					else:
+						return minecraft:jungle
 				else:
-					return beer:forest/moss_garden
+					if {_humidity} < 0.4:
+						return minecraft:desert
+					else:
+						return beer:desert/lush_desert
+			# Low erosion = rugged mountains
 			else:
-				# Hot far inland
-				if {_humidity} < 0.35:
-					return beer:desert/dry_desert
+				if {_temp} < 0.2:
+					if {_pv} > 0.5:
+						return minecraft:frozen_peaks
+					else:
+						return minecraft:snowy_slopes
+				else if {_temp} < 0.4:
+					if {_pv} > 0.5:
+						return minecraft:jagged_peaks
+					else:
+						return minecraft:windswept_gravelly_hills
+				else if {_temp} < 0.6:
+					if {_pv} > 0.5:
+						return minecraft:jagged_peaks
+					else:
+						return minecraft:windswept_forest
+				else if {_temp} < 0.8:
+					if {_pv} > 0.5:
+						return minecraft:stony_peaks
+					else:
+						return minecraft:windswept_savanna
 				else:
-					return beer:desert/lush_desert
+					return minecraft:eroded_badlands
+		# Failsafe
+		return minecraft:plains
 
 register chunk generator with id "test_gen":
 	vanilla caves: false
 	vanilla decor: true
-	vanilla structures: true
+	vanilla structures: false
 	noise gen:
 		loop 16 times:
 			loop 16 times:
@@ -618,9 +776,10 @@ register chunk generator with id "test_gen":
 				delete {-cache_biome::%{_x}%::%{_z}%}
 			stop
 		set {_cont} to continental noise at {_x}, {_z}
-		set {_terrain} to terrain noise at {_x}, {_z}
+		set {_erosion} to erosion noise at {_x}, {_z}
+		set {_pv} to pv noise at {_x}, {_z}
 		set {_temp} to temperature noise at {_x}, {_z}
 		set {_humidity} to humidity noise at {_x}, {_z}
-		set {_biome} to noise biome with cont {_cont} and terrain {_terrain} and temp {_temp} and humidity {_humidity} at {_x}, {_z}
+		set {_biome} to noise biome with cont {_cont} and erosion {_erosion} and pv {_pv} and temp {_temp} and humidity {_humidity}
 		set {-cache_biome::%{_x}%::%{_z}%} to {_biome}
 		set chunkdata biome to {_biome}
