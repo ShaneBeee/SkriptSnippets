@@ -1,0 +1,71 @@
+# GreenThumb
+# By: ShaneBee
+
+# This snippet shows how to use a custom enchantment to create an xray ore finder.
+
+# Requirements: SkBee, SkNMS
+
+# Create our colors for the displays and distance of the enchantment based on enchant level
+on load:
+    set {-colors::iron} to rgb(189, 180, 179)
+    set {-colors::gold} to rgb(245, 189, 5)
+    set {-colors::diamond} to rgb(5, 241, 245)
+    set {-colors::lapis} to rgb(5, 41, 245)
+    set {-colors::redstone} to rgb(245, 13, 5)
+    set {-colors::coal} to rgb(56, 54, 54)
+    set {-colors::emerald} to rgb(12, 201, 12)
+    set {-colors::copper} to rgb(191, 89, 6)
+
+    set {-xrayDist::1} to 7
+    set {-xrayDist::2} to 12
+    set {-xrayDist::3} to 16
+    set {-xrayDist::4} to 19
+    set {-xrayDist::5} to 22
+
+# Register custom enchantment
+registry registration:
+    register enchantment:
+        id: "my_pack:xray"
+        description: mini message from "<red>X-Ray"
+        supported_items: "minecraft:pickaxes"
+        max_level: 5
+
+# Make a block glow
+function glowBlock(b: block):
+    set {_data} to blockdata of {_b}
+    set {_t} to "%{_data}%"
+    loop {-colors::*}:
+        if {_t} contains loop-index:
+            set {_color} to loop-value
+    spawn a block display at (exact location of {_b}) ~ vector(0.001, 0.001, 0.001):
+        set glowing of entity to true
+        set scale of entity to vector(0.99, 0.99, 0.99)
+        set blockdata of entity to {_data}
+        set block brightness override of entity to 15
+        set sky brightness override of entity to 15
+        set {_e} to entity
+        set glow color override of {_e} to {_color}
+
+    set metadata value "b" of {_b} to {_e}
+    wait 5 seconds
+    kill {_e}
+
+
+on break:
+    set {_e} to metadata value "b" of event-block
+    if {_e} is set:
+        kill {_e}
+on right click:
+    set {_level} to level of my_pack:xray of player's tool
+    if {_level} is not set:
+        stop
+    if cooldown of player's tool for player > 0 seconds:
+        stop
+    set {_level} to {-xrayDist::%{_level}%}
+    loop blocks in radius ({_level}) around target block of player:
+        if "%blockdata of loop-block%" contains "ore":
+            glowBlock(loop-block)
+            add 1 to {_c}
+    if {_c} > 0:
+        make player swing hand
+        set cooldown of player's tool for player to 5 seconds
