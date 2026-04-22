@@ -1,12 +1,23 @@
-# Explosive
+# Auto-Smelt Pickaxe
 # By: ShaneBee
 
 # This snippet shows how to use a custom enchantment to create an auto smelting pickaxe.
 
-# Requirements: Skript 2.9+, Beer (Datapack - See ReadME), Minecraft 1.21+
+# Requirements: Skript 2.9+, SkNMS, Minecraft 1.21+
+
+# Register new enchant with SkNMS
+# You could also just do this in a datapack
+registry registration:
+	register custom enchantment:
+		id: "my_pack:auto_smelt"
+		description: formatted "<aqua>Auto Smelt"
+		supported_items: "minecraft:pickaxes"
+		max_level: 1
 
 on break of iron ore, gold ore or copper ore:
-	set {_lvl} to enchantment level of beer:auto_smelt of player's tool
+	if gamemode of player != survival or adventure:
+		stop
+	set {_lvl} to enchantment level of my_pack:auto_smelt of player's tool
 	if {_lvl} > 0:
 		clear drops
 		loop drops of event-block using player's tool:
@@ -18,4 +29,6 @@ on break of iron ore, gold ore or copper ore:
 				add (item amount of loop-item) of copper ingot to {_i::*}
 			else:
 				add loop-value to {_i::*}
-		drop {_i::*} at event-block
+		wait 1 tick
+		set {_loc} to location of event-block ~ vector(0.5,0.5,0.5)
+		drop {_i::*} at {_loc}
