@@ -1,0 +1,70 @@
+# Resource Pack Chooser
+# By ShaneBee
+
+# This little snippet shows an example of letting players choose resource packs during the configuration stage
+
+# Requires: SkBee 3.21.0+
+
+# Setup resource pack stuff for easy access
+on load:
+	if {-uuid::f} is not set:
+		set {-uuid::f} to random uuid
+	if {-uuid::d} is not set:
+		set {-uuid::d} to random uuid
+
+	# These packs are added to my dropbox and may or may not be valid at any given time
+	set {-url::f} to "https://www.dropbox.com/scl/fi/rvr1ueijkxojfwzpk9ql4/Faithful-32x-1.21.11.zip?rlkey=pmsohxgujfies31bvtdaxf4f8&st=qivo2nhy&dl=1"
+	set {-url::d} to "https://www.dropbox.com/scl/fi/bssysojmdbetab34ogy4s/Default-Dark-Mode-26.1-2026.4.0.zip?rlkey=2hsppopz2xtnqn80m27944vr9&st=r06bhlm8&dl=1"
+	set {-hash::f} to "c3f4bac5425c99b80ca1938f13b3aee5ec27bd1b"
+	set {-hash::d} to "3fa88eee1ef3c87b2d5570cb79ed24008c1c14f5"
+
+# Handle player logging in
+on async player connection configure:
+	set {_u} to event-uuid
+	open multi action dialog to event-audience:
+		title: "Resource Pack Chooser"
+		columns: 1
+		body:
+			add text body:
+				contents: colored "<#27F5CC>Choose packs to play!"
+		inputs:
+			add boolean input:
+				key: "faithful"
+				label: "Faithful   "
+			add boolean input:
+				key: "dark"
+				label: "Dark Mode"
+		actions:
+			add callback action button:
+				label: "&aAccept"
+				trigger:
+					set {_n} to event-nbt
+					set {_f} to boolean tag "faithful" of {_n}
+					set {_d} to boolean tag "dark" of {_n}
+					set {_a} to event-audience
+					if all:
+						{_f} = false
+						{_d} = false
+					then:
+						unfreeze connection {_a}
+						stop
+					send resource packs to {_a}:
+						prompt: "Please use a pack!"
+						packs:
+							if {_f} = true:
+								apply pack with url {-url::f} with id {-uuid::f} and with hash {-hash::f}
+							if {_d} = true:
+								apply pack with url {-url::d} with id {-uuid::d} and with hash {-hash::d}
+						received:
+							if event-status = successfully_loaded:
+								unfreeze connection {_a}
+							else if event-status is not intermediate:
+								unfreeze connection {_a} and disconnect due to "&cRuh Roh: %event-status%"
+		exit_action:
+			add callback action button:
+				label: "&cDecline"
+				trigger:
+					unfreeze connection event-audience and disconnect due to "&cOk bye"
+
+	# Freeze the player's connection while they hang out in the dialog
+	freeze connection event-player connection with timeout message "Please try again"
