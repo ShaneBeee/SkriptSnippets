@@ -10,9 +10,9 @@ on load:
 	# Wait a tick to make sure generator is properly loaded
 	# without this the spawn area doesn't generate properly (it's flat)
 	wait 1 tick
-	if world("world_vanilla_like") is not loaded:
+	if world("my_worlds_vanilla_like") is not loaded:
 		send "&bLoading world_vanilla_like"
-		set {_w} to world creator named "world_vanilla_like"
+		set {_w} to world creator with key "my_worlds:vanilla_like"
 		set chunk generator of {_w} to chunk generator with id "test"
 		load world from creator {_w}
 		send "&aLoaded world_vanilla_like"
@@ -153,16 +153,11 @@ register chunk generator with id "test":
 	vanilla caves: true
 	vanilla structures: true
 	vanilla mobs: true
-	height gen:
-		set {_x} to x coord of event-location
-		set {_z} to z coord of event-location
-		set {_n} to block noise at {_x}, {_z}
-		set chunkdata height to {_n} + 1
-	chunk gen:
-		loop 16 times:
-			loop 16 times:
-				set {_x} to (loop-number-1) - 1
-				set {_z} to (loop-number-2) - 1
+	noise gen:
+		loop integers between 0 and 15:
+			loop integers between 0 and 15:
+				set {_x} to (loop-number-1)
+				set {_z} to (loop-number-2)
 				set {_n} to block noise at ({_x} + (16 * chunkdata chunk x)), ({_z} + (16 * chunkdata chunk z))
 
 				set {_top} to {_n} if {_n} > 64 else 64
@@ -170,46 +165,48 @@ register chunk generator with id "test":
 				# Fill stone
 				set chunkdata blocks between vector({_x},-64,{_z}) and vector(({_x}),({_n}),({_z})) to stone[]
 
+				# Fill water
+				if {_n} < 61:
+					set chunkdata blocks between vector({_x},{_n} + 1,{_z}) and vector(({_x}),61,({_z})) to water[]
+
+	surface gen:
+		loop integers between 0 and 15:
+			loop integers between 0 and 15:
+				set {_x} to (loop-number-1)
+				set {_z} to (loop-number-2)
+
+				# Let's get our original noise so we know where the top is
+				set {_y} to block noise at ({_x} + (16 * chunkdata chunk x)), ({_z} + (16 * chunkdata chunk z))
+
+				# We also want to get our biome so we can place biome appropriate blocks
+				set {_biome} to calculated biome at vector({_x} + (16 * chunkdata chunk x), {_y}, {_z} + (16 * chunkdata chunk z))
 
 				# Place surface
-				loop integers between {_n} and {_top}:
-					set {_y} to loop-number-3
-					set {_biome} to calculated biome at vector({_x} + (16 * chunkdata chunk x), {_y}, {_z} + (16 * chunkdata chunk z))
+				if any:
+					{_biome} = desert, badlands or beach
+					{_biome} = biome registry tag key "is_ocean"
+				then:
+					set {_data} to sand[]
+				else if all:
+					{_biome} = mangrove swamp
+					chance of 45%
+				then:
+					set {_data} to mud[]
+				else:
+					set {_data} to grass_block[]
 
-					# Surface
-					if {_y} = {_n}:
-						if {_y} > 64:
-							if {_biome} = desert, badlands or beach:
-								set {_data} to sand[]
-							else if all:
-								{_biome} = mangrove swamp
-								chance of 45%
-							then:
-								set {_data} to mud[]
-							else:
-								set {_data} to grass_block[]
-						else:
-							set {_data} to sand[]
-
-					# Water
-					else if all:
-						{_y} > {_n}
-						{_y} < 64
-					then:
-						set {_data} to water[]
-
-					if {_data} is set:
-						set chunkdata block at vector({_x}, {_y}, {_z}) to {_data}
-						if {_data} is grass_block[] or mud[]:
-							set {_below} to dirt[]
-						else if {_data} is sand[]:
-							set {_below} to sandstone[]
-						if {_below} is set:
-							loop 3 times:
-								set {_yy} to loop-number-4
-								set chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) to {_below}
-						delete {_data}
-						delete {_below}
+				if {_data} is set:
+					set chunkdata block at vector({_x}, {_y}, {_z}) to {_data}
+					if {_data} is grass_block[] or mud[]:
+						set {_below} to dirt[]
+					else if {_data} is sand[]:
+						set {_below} to sandstone[]
+					if {_below} is set:
+						loop 3 times:
+							set {_yy} to loop-number-3
+							set chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) to {_below}
+					delete {_data}
+					delete {_below}
 	biome gen:
 		set {_l} to event-location
 		set {_x} to x coord of {_l}
