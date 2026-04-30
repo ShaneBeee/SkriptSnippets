@@ -169,24 +169,29 @@ register chunk generator with id "test":
 				if {_n} < 61:
 					set chunkdata blocks between vector({_x},{_n} + 1,{_z}) and vector(({_x}),61,({_z})) to water[]
 
+				# Fill bedrock
+				set {_r} to random integer between -61 and -59
+				set chunkdata blocks between vector({_x},-64,{_z}) and vector(({_x}),({_r}),({_z})) to bedrock[]
 	surface gen:
 		loop integers between 0 and 15:
 			loop integers between 0 and 15:
 				set {_x} to (loop-number-1)
 				set {_z} to (loop-number-2)
 
-				# Let's get our original noise so we know where the top is
-				set {_y} to block noise at ({_x} + (16 * chunkdata chunk x)), ({_z} + (16 * chunkdata chunk z))
+				# Let's get the highest y at this location
+				set {_y} to chunkdata highest y at {_x}, {_z}
 
 				# We also want to get our biome so we can place biome appropriate blocks
 				set {_biome} to calculated biome at vector({_x} + (16 * chunkdata chunk x), {_y}, {_z} + (16 * chunkdata chunk z))
 
 				# Place surface
 				if any:
-					{_biome} = desert, badlands or beach
-					{_biome} = biome registry tag key "is_ocean"
+					{_biome} = desert or beach
+					{_y} < 61
 				then:
 					set {_data} to sand[]
+				else if {_biome} = badlands:
+					set {_data} to red_sand[]
 				else if all:
 					{_biome} = mangrove swamp
 					chance of 45%
@@ -198,15 +203,31 @@ register chunk generator with id "test":
 				if {_data} is set:
 					set chunkdata block at vector({_x}, {_y}, {_z}) to {_data}
 					if {_data} is grass_block[] or mud[]:
-						set {_below} to dirt[]
-					else if {_data} is sand[]:
-						set {_below} to sandstone[]
-					if {_below} is set:
 						loop 3 times:
 							set {_yy} to loop-number-3
-							set chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) to {_below}
+							if chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) is stone[]:
+								set chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) to dirt[]
+					else if {_data} is sand[]:
+						loop 3 times:
+							set {_yy} to loop-number-3
+							if chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) is stone[]:
+								set chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) to sand[]
+						if chunkdata block at vector({_x}, {_y} - {_yy} - 1, {_z}) is stone[]:
+							set chunkdata block at vector({_x}, {_y} - {_yy} - 1, {_z}) to sandstone[]
+					else if {_data} is red_sand[]:
+						loop 3 times:
+							set {_yy} to loop-number-3
+							if chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) is stone[]:
+								set chunkdata block at vector({_x}, {_y} - {_yy}, {_z}) to red_sand[]
+						if chunkdata block at vector({_x}, {_y} - {_yy} - 1, {_z}) is stone[]:
+							set chunkdata block at vector({_x}, {_y} - {_yy} - 1, {_z}) to red_sandstone[]
+
 					delete {_data}
-					delete {_below}
+    height gen:
+        set {_x} to x coord of event-location
+        set {_z} to z coord of event-location
+        set {_y} to block noise at {_x}, {_z}
+        set chunkdata height to {_y} + 1
 	biome gen:
 		set {_l} to event-location
 		set {_x} to x coord of {_l}
@@ -215,4 +236,3 @@ register chunk generator with id "test":
 
 		set {_biome} to calculated biome at vector({_x}, {_y}, {_z})
 		set chunkdata biome to {_biome} ? plains
-
