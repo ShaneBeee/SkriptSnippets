@@ -1,0 +1,63 @@
+# Homes
+# By ShaneBee
+
+# This is a simple homes command.
+# It allows you to create homes and teleport to them.
+# You can also assign permissions to players to determine the amount of homes they can create.
+# Perm = `my_script.homes.<max_amount>`
+
+function getMaxHomes(p: player) -> number:
+	set {_homes} to 1
+	loop permissions of {_p}:
+		set {_v} to loop-value
+		if {_v} starts with "my_script.homes.":
+			replace "my_script.homes." with "" in {_v}
+			set {_h} to {_v} parsed as number
+			if {_h} > {_homes}:
+				set {_homes} to {_h}
+
+	return {_homes}
+
+brig command tree /homes:
+	literal arg "set":
+		string arg "name":
+			trigger:
+				set {_max} to getMaxHomes(player)
+				if size of {my_script::homes::%uuid of player%::*} < {_max}:
+					if {my_script::homes::%uuid of player%::%{_name}%} is not set:
+						set {my_script::homes::%uuid of player%::%{_name}%} to location of player
+						send "Home %{_name}% has been set to your location"
+					else:
+						send "<red>A home with the name %{_name}% is already set"
+				else:
+					send "You have already reached your max %{_max}% allowed homes"
+
+	literal arg "delete":
+		string arg "name":
+			suggestions:
+				apply suggestions (indexes of {my_script::homes::%uuid of sender%::*})
+			trigger:
+				if {my_script::homes::%uuid of player%::%{_name}%} is not set:
+					send "<red>You do not have a home named %{_name}%"
+				else:
+					delete {my_script::homes::%uuid of player%::%{_name}%}
+					send "Deleted home named %{_name}%"
+
+	literal arg "teleport":
+		string arg "name":
+			suggestions:
+				apply suggestions (indexes of {my_script::homes::%uuid of sender%::*})
+			trigger:
+				if {my_script::homes::%uuid of player%::%{_name}%} is not set:
+					send "<red>You do not have a home named %{_name}%"
+				else:
+					send "Going home"
+					teleport player to {my_script::homes::%uuid of player%::%{_name}%}
+
+	literal arg "list":
+		trigger:
+			set {_names::*} to sorted indexes of {my_script::homes::%uuid of player%::*}
+			set {_max} to getMaxHomes(player)
+			send "Homes (%size of {_names::*}%/%{_max}%):"
+			set {_names} to join {_names::*} with ", "
+			send {_names}
