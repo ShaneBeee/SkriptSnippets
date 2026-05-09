@@ -1,0 +1,58 @@
+# Vein Miner
+# By: ShaneBee
+
+# This snippet shows how to create and use a custom enchantment for a vein miner pickaxe.
+
+# Requirements: Skript 2.9+, SkBee, SkNMS, Minecraft 1.21+
+
+#! REGISTER ENCHANTMENT !#
+registry registration:
+	register new enchantment:
+		id: "my_enchants:vein_miner"
+		description: formatted "<#2F9EF5>Vein Miner"
+		supported_items: "minecraft:pickaxes"
+		anvil_cost: 4
+		max_cost_base: 65
+		max_cost_per_level_above_first: 9
+		min_cost_base: 15
+		min_cost_per_level_above_first: 9
+		max_level: 6
+		slots: mainhand slot group
+		weight: 2
+
+#! FUNCTIONS !#
+# This function breaks connected ores
+function mine(b: block, origin: location, bt: itemtype, p: player, lvl: number, t: timespan):
+	set {_l1} to location of {_b} ~ vector(1,1,1)
+	set {_l2} to location of {_b} ~ vector(-1,-1,-1)
+	loop blocks within {_l1} and {_l2}:
+		if all:
+			loop-block != {_b}
+			type of loop-block = {_bt}
+			durability of tool of {_p} > 0
+			enchantment level of my_enchants:vein_miner of tool of {_p} = {_lvl}
+		then:
+			break loop-block with effects and with xp using tool of {_p}
+			set {_lb} to loop-block
+			run 1 tick later:
+				teleport dropped items in radius 2 around {_lb} to {_origin}
+				teleport experience orbs in radius 2 around {_lb} to {_origin}
+
+			if gamemode of {_p} = survival or adventure:
+				damage tool of {_p} by 1
+			if {_t} > 0 ticks:
+				wait {_t}
+			mine(loop-block, {_origin}, {_bt}, {_p}, {_lvl}, {_t})
+
+#! EVENTS !#
+# Handle breaking a log/wood with our enchanted item
+on break:
+	if type of event-block is tagged as block tag "paper:ores":
+		set {_lvl} to enchantment level of my_enchants:vein_miner of player's tool
+		if {_lvl} > 0:
+			# The time between block breaks is determinded by the level of enchantment
+			# The higher the level the faster the blocks break
+			# After level 5, it will break instantly
+			set {_t} to (6 - {_lvl})
+			set {_t} to "%{_t}% ticks" parsed as timespan
+			mine(event-block, location of event-block, type of event-block, player, {_lvl}, {_t})
