@@ -77,3 +77,12 @@ function time(time: timespan) :: string:
 	set {_time} to {_time}.replaceAll("\.\d+", "")
 
 	return {_time}
+
+#! TOTEM ANIMATION !#
+# Show the totem animation to a player with any item
+function deathEffect(p: player, i: itemtype):
+	set {_old} to tool of {_p}
+	apply death protection component to {_i}
+	set tool of {_p} to {_i}
+	show protected from death effect on {_p}
+	set tool of {_p} to {_old}
